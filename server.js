@@ -4,7 +4,7 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const CLAVE = process.env.CLAVE_API || 'ecosort-uls';
+const CLAVE = process.env.CLAVE_API || 'eco-sort';
 const ARCHIVO = path.join(__dirname, 'datos.json');
 
 app.use(express.json());
