@@ -54,7 +54,7 @@ async function act(){
     else a.style.display='none';
     if(d.lleno){a.style.background='var(--er)';a.style.color='#fff'}
     if(d.eventos.length)$('ev').innerHTML=d.eventos.slice(0,15).map(e=>`<tr><td>${new Date(e.fecha).toLocaleTimeString()}</td><td>${T[e.evento]||e.evento}</td><td>${e.categoria||'-'}</td></tr>`).join('');
-  }catch(e){$('con').textContent='Servidor sin respuesta';$('con').className='chip'}
+  }catch(e){$('con').textContent='Servidor sin respuesta';$('con'].className='chip'}
 }
 $('bp').onclick=async()=>{await fetch('/api/pausa',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pausa:!pausa})});act()};
 act();setInterval(act,2000);
