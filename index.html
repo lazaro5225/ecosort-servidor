@@ -1,61 +1,165 @@
 <!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ECO-SORT ULS</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#12202F">
+<title>ECO-SORT ULS · Centro de control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f1f4f6;--fg:#1c2530;--cd:#fff;--bd:#d5dbe1;--ac:#1b6ec2;--ok:#2e9d5b;--wa:#e0a21b;--er:#d64545}
-@media(prefers-color-scheme:dark){:root{--bg:#141a21;--fg:#e4e9ee;--cd:#1e2630;--bd:#323d4a;--ac:#5aa9f5}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.4 system-ui,"Segoe UI",sans-serif}
-header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:14px 18px;border-bottom:1px solid var(--bd);background:var(--cd)}
-h1{font-size:18px;margin:0;flex:1}h2{font-size:15px;margin:22px 0 8px}
-.chip{padding:3px 10px;border-radius:99px;font-size:13px;background:var(--er);color:#fff}.chip.on{background:var(--ok)}
-button{font:inherit;padding:7px 14px;border-radius:8px;border:1px solid var(--ac);background:var(--ac);color:#fff;cursor:pointer}
-button.p{background:var(--wa);border-color:var(--wa);color:#222}
-main{max-width:900px;margin:0 auto;padding:16px}
-#alerta{display:none;background:var(--er);color:#fff;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-weight:600}
-#cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
-.card{background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:14px}
-.card h3{margin:0 0 4px;font-size:15px}.num{font-size:34px;font-weight:700}
-.bar{height:12px;background:var(--bd);border-radius:6px;overflow:hidden;margin:8px 0 4px}
-.bar i{display:block;height:100%;width:0;background:var(--ok);transition:width .4s}
-table{width:100%;border-collapse:collapse;background:var(--cd);border:1px solid var(--bd);border-radius:10px;overflow:hidden}
-th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--bd);font-size:14px}th{opacity:.7}
+:root{--bg:#F2F3F5;--sf:#fff;--hd:#F7F8FA;--ink:#161B22;--mut:#667085;--ln:#D5D9E0;--rail:#12202F;--rt:#C5CEDA;--ac:#1F3A5F;--ok:#2F7D55;--wa:#A9740F;--er:#A8322D;--m:#4A5B73;--o:#3E7A57;--v:#9A7A3C}
+@media(prefers-color-scheme:dark){:root{--bg:#0D1218;--sf:#151C25;--hd:#18212B;--ink:#E4E8ED;--mut:#8996A6;--ln:#2A3541;--rail:#0A0F15;--ac:#5B87BD;--ok:#4CAF7D;--wa:#D39B2F;--er:#D9615B;--m:#7F93AE;--o:#5FA37C;--v:#C2A15E}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 "IBM Plex Sans",system-ui,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums;display:grid;grid-template-columns:240px minmax(0,1fr);min-height:100vh}
+aside{background:var(--rail);color:var(--rt);padding:22px 18px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:22px}
+.br{display:flex;gap:11px;align-items:center;color:#fff}.br svg{flex:none}.br b{display:block;font-weight:600;font-size:16px;line-height:1.2}.br span{font-size:12px;opacity:.7}
+.st{border-top:1px solid rgba(255,255,255,.1)}.st div{display:flex;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.1);font-size:13px}
+.st em{font-style:normal;color:#fff;font-weight:500;text-align:right}.st .on{color:#6FD39B}.st .off{color:#F08B85}
+.ft{margin-top:auto;font-size:12px;opacity:.55}
+main{padding:24px 28px 32px;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px;align-content:start}
+.top{grid-column:span 12}.top h1{font-size:20px;font-weight:600;margin:0}.top p{margin:2px 0 0;color:var(--mut)}
+#alerta{display:none;grid-column:span 12;padding:11px 16px;background:var(--sf);border:1px solid var(--ln);border-left:4px solid var(--er);border-radius:4px;font-weight:500}
+.kpi{grid-column:span 12;display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;background:var(--sf);border:1px solid var(--ln);border-radius:4px}
+.kpi>div{padding:16px 20px;border-left:1px solid var(--ln)}.kpi>div:first-child{border-left:0}
+.kpi small{color:var(--mut);display:block}.kpi b{font-size:28px;font-weight:600;line-height:1.3}.kpi i{display:inline-block;width:8px;height:8px;margin-right:7px;border-radius:1px}
+.pn{background:var(--sf);border:1px solid var(--ln);border-radius:4px;min-width:0}
+.pn>h2{margin:0;padding:11px 18px;background:var(--hd);border-bottom:1px solid var(--ln);font-size:14px;font-weight:600;border-radius:4px 4px 0 0}
+.pb{padding:16px 18px}.c12{grid-column:span 12}.c7{grid-column:span 7}.c5{grid-column:span 5}
+.row{display:grid;grid-template-columns:96px 1fr 56px 92px;gap:14px;align-items:center;padding:13px 0;border-bottom:1px solid var(--ln)}.row:last-of-type{border-bottom:0}
+.row small{display:block;color:var(--mut)}.pc{text-align:right;font-weight:600;font-size:16px}
+.bar{position:relative;height:12px;background:var(--hd);border:1px solid var(--ln);border-radius:2px}
+.bar i{position:absolute;inset:0 auto 0 0;width:0;transition:width .7s ease,background .3s}
+.bar u{position:absolute;top:-4px;bottom:-4px;width:0;border-left:1px solid var(--mut)}
+.sc{text-align:right;font-size:12px;color:var(--mut);margin-top:6px}
+.tg{font-size:12px;font-weight:500;padding:2px 8px;border:1px solid;border-radius:3px;text-align:center;color:var(--ok)}.tg.w{color:var(--wa)}.tg.e{color:var(--er)}
+.sd{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--ln);border-radius:4px;background:var(--hd);margin-bottom:14px}
+.sd svg{flex:none}.sd b{display:block;font-size:16px;font-weight:600}.sd span{color:var(--mut);font-size:13px}
+.sd.cl{border-color:var(--er)}.sd.cl b,.sd.cl svg{color:var(--er)}.sd.ab b,.sd.ab svg{color:var(--ok)}
+button{font:inherit;font-weight:500;min-height:44px;padding:9px 16px;border-radius:4px;border:1px solid var(--ac);cursor:pointer;width:100%;transition:background .15s,opacity .15s;touch-action:manipulation}
+button:focus-visible{outline:2px solid var(--ac);outline-offset:2px}button:disabled{opacity:.45;cursor:not-allowed}
+.bc{background:var(--er);border-color:var(--er);color:#fff}.ba{background:var(--ok);border-color:var(--ok);color:#fff}.bp{background:transparent;color:var(--ink);border-color:var(--ln);margin-top:8px}.bp:hover{background:var(--hd)}
+.dist{display:flex;height:6px;background:var(--ln);margin:16px 0 0;border-radius:1px;overflow:hidden}.dist i{display:block;transition:width .6s}
+.dl{font-size:12px;color:var(--mut);margin-top:6px}
+svg text{fill:var(--mut);font:11px "IBM Plex Sans",sans-serif}.lg{display:flex;flex-wrap:wrap;gap:6px 20px;font-size:13px;color:var(--mut);margin-top:8px}.lg span:before{content:"";display:inline-block;width:14px;height:2px;margin-right:7px;vertical-align:middle;background:var(--c)}
+.empty{color:var(--mut);padding:36px 16px;text-align:center}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px 18px;border-bottom:1px solid var(--ln)}th{color:var(--mut);font-weight:500;font-size:13px;background:var(--hd)}tr:last-child td{border-bottom:0}
+.cd{display:inline-block;width:8px;height:8px;margin-right:8px;border-radius:1px;background:var(--mut)}
+#toast{position:fixed;right:24px;bottom:calc(24px + env(safe-area-inset-bottom));background:var(--rail);color:#fff;padding:11px 18px;border-radius:4px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:9;border-left:3px solid var(--ac)}#toast.s{opacity:1}
+
+@media(max-width:960px){
+ body{display:block}
+ aside{position:sticky;top:0;z-index:5;height:auto;flex-direction:column;gap:10px;padding:calc(12px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 12px calc(16px + env(safe-area-inset-left))}
+ .br svg{width:26px;height:26px}.br b{font-size:15px}
+ .st{border:0;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+ .st div{flex-direction:column;border:0;padding:6px 8px;background:rgba(255,255,255,.07);border-radius:4px;font-size:11px;gap:0}.st em{text-align:left;font-size:13px}
+ .ft{display:none}
+ main{padding:16px calc(14px + env(safe-area-inset-right)) calc(28px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left));gap:14px}
+ .top h1{font-size:18px}.top p{font-size:13px}
+ .c7,.c5{grid-column:span 12}
+ #ctl{order:1}#niv{order:2}.kpi{order:0}
+ .kpi{grid-template-columns:1fr 1fr}.kpi>div{padding:12px 16px}.kpi>div:nth-child(odd){border-left:0}.kpi>div:nth-child(n+3){border-top:1px solid var(--ln)}.kpi b{font-size:24px}
+ .pb{padding:14px 16px}.pn>h2{padding:11px 16px}
+ .sd{padding:14px}.sd b{font-size:17px}
+ button{min-height:50px;font-size:15px}
+ #toast{left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));text-align:center}
+}
+@media(max-width:560px){
+ .st{grid-template-columns:1fr 1fr}
+ .row{grid-template-columns:1fr 84px;grid-template-areas:"n p" "b t";gap:8px 14px;padding:14px 0}
+ .row>div:nth-child(1){grid-area:n}.row .bar{grid-area:b}.row .pc{grid-area:p;font-size:20px}.row .tg{grid-area:t}
+ thead{display:none}table,tbody{display:block}
+ tbody tr{display:grid;grid-template-columns:1fr auto;grid-template-areas:"e e" "h c";gap:2px 12px;padding:12px 16px;border-bottom:1px solid var(--ln)}
+ tbody tr:last-child{border-bottom:0}
+ td{padding:0;border:0}td:nth-child(2){grid-area:e;font-weight:500}td:nth-child(1){grid-area:h;color:var(--mut);font-size:12.5px}td:nth-child(3){grid-area:c;font-size:12.5px;color:var(--mut);text-align:right}
+ td.empty{grid-column:1/-1}
+}
+@media(min-width:1500px){main{max-width:1400px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style></head><body>
-<header><h1>ECO-SORT ULS · Panel del clasificador</h1><span id="con" class="chip">Sin conexión</span><button id="bp">Pausar banda</button></header>
+<aside>
+<div class="br"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#7FB69A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20c0-9 6-15 16-16 0 10-6 16-16 16z"/><path d="M4 20 14 10"/></svg><div><b>ECO-SORT ULS</b><span>Clasificador de residuos</span></div></div>
+<div class="st"><div>Arduino<em id="con" class="off">Sin conexión</em></div><div>Último dato<em id="up">–</em></div><div>Banda<em id="sb">–</em></div><div>Compuerta<em id="sg">–</em></div></div>
+<div class="ft">Panel de operación · v1.2</div>
+</aside>
 <main>
+<div class="top"><h1>Centro de control</h1><p>Recipientes, compuerta de entrada y banda transportadora.</p></div>
 <div id="alerta"></div>
-<section id="cards"></section>
-<h2>Eventos recientes</h2>
-<table><thead><tr><th>Hora</th><th>Evento</th><th>Categoría</th></tr></thead><tbody id="ev"><tr><td colspan="3">Sin eventos todavía</td></tr></tbody></table>
+<section class="kpi"><div><small>Total clasificado</small><b id="tot">0</b></div>
+<div><small><i style="background:var(--m)"></i>Metal</small><b id="k0">0</b></div>
+<div><small><i style="background:var(--o)"></i>Orgánico</small><b id="k1">0</b></div>
+<div><small><i style="background:var(--v)"></i>Variado</small><b id="k2">0</b></div></section>
+
+<section class="pn c7" id="niv"><h2>Nivel de los recipientes</h2><div class="pb"><div id="bins"></div><div class="sc">Alerta 70 % · Bloqueo 85 %</div></div></section>
+
+<section class="pn c5" id="ctl"><h2>Control de operación</h2><div class="pb">
+<div class="sd ab" id="gate"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3" y="11" width="18" height="9" rx="1"/><path id="gl" d="M7 11V7l9-3"/></svg><div><b id="gs">Abierta</b><span id="gd">Recibiendo residuos</span></div></div>
+<button id="bg" class="bc">Cerrar compuerta de entrada</button>
+<button id="bp" class="bp">Pausar banda</button>
+<div class="dist" id="dist"></div><div class="dl">Proporción de residuos por categoría</div></div></section>
+
+<section class="pn c12"><h2>Historial de nivel</h2><div class="pb"><div id="hist"><div class="empty">Cargando…</div></div></div></section>
+
+<section class="pn c12"><h2>Registro de eventos</h2>
+<table><thead><tr><th>Hora</th><th>Evento</th><th>Categoría</th></tr></thead><tbody id="ev"><tr><td colspan="3" class="empty">Sin eventos todavía.</td></tr></tbody></table></section>
 </main>
+<div id="toast"></div>
 <script>
-const N=['Metal','Orgánico','Variado'],K=['metal','organico','variado'];
-const T={objeto:'Objeto clasificado',lleno:'RECIPIENTE LLENO',reanuda:'Reanudado (nivel bajo 70 %)',inicio:'Sistema iniciado'};
-document.getElementById('cards').innerHTML=N.map((n,i)=>`<div class="card"><h3>${n}</h3><div class="num" id="c${i}">0</div><small>objetos clasificados</small><div class="bar"><i id="b${i}"></i></div><div id="l${i}">Nivel: 0 %</div></div>`).join('');
-let pausa=false;
-const $=id=>document.getElementById(id);
+const $=id=>document.getElementById(id),N=['Metal','Orgánico','Variado'],C=['var(--m)','var(--o)','var(--v)'];
+const T={objeto:'Objeto clasificado',lleno:'Recipiente lleno',reanuda:'Reanudado (nivel bajo 70 %)',inicio:'Sistema iniciado',compuerta_cerrada:'Compuerta cerrada desde el panel',compuerta_abierta:'Compuerta abierta desde el panel'};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const K=c=>{c=String(c).toLowerCase();return c.startsWith('met')?0:c.startsWith('org')?1:c.startsWith('var')?2:-1};
+$('bins').innerHTML=N.map((n,i)=>`<div class="row"><div><b>${n}</b><small id="c${i}">0 objetos</small></div><div class="bar"><i id="f${i}" style="background:${C[i]}"></i><u style="left:70%"></u><u style="left:85%"></u></div><div class="pc" id="p${i}">0 %</div><div class="tg" id="t${i}">Normal</div></div>`).join('');
+let pausa=false,cerrada=false,llenoAct=false,busy=false,rows=null;
+function toast(m){const t=$('toast');t.textContent=m;t.className='s';clearTimeout(toast.h);toast.h=setTimeout(()=>t.className='',2600)}
 async function act(){
   try{
     const d=await (await fetch('/api/estado')).json();
-    pausa=d.pausa;
-    $('con').textContent=d.conectado?'Arduino conectado':'Arduino sin conexión';
-    $('con').className='chip'+(d.conectado?' on':'');
-    $('bp').textContent=pausa?'Reanudar banda':'Pausar banda';
-    $('bp').className=pausa?'':'p';
+    pausa=d.pausa;cerrada=!!d.cerrarCompuerta;llenoAct=!!d.lleno;
+    $('con').textContent=d.conectado?'Conectado':'Sin conexión';$('con').className=d.conectado?'on':'off';
+    $('up').textContent=d.ultimaConexion?new Date(d.ultimaConexion).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}):'–';
+    $('sb').textContent=pausa?'En pausa':'Operando';
     d.niveles.forEach((v,i)=>{
-      $('c'+i).textContent=d.contadores[i];
-      $('l'+i).textContent='Nivel: '+v+' %';
-      const b=$('b'+i);b.style.width=v+'%';
-      b.style.background=v>=85?'var(--er)':v>=70?'var(--wa)':'var(--ok)';
+      $('p'+i).textContent=v+' %';const f=$('f'+i);f.style.width=Math.min(v,100)+'%';f.style.background=v>=85?'var(--er)':v>=70?'var(--wa)':C[i];
+      $('c'+i).textContent=d.contadores[i]+(d.contadores[i]==1?' objeto':' objetos');$('k'+i).textContent=d.contadores[i];
+      const t=$('t'+i);t.className='tg'+(v>=85?' e':v>=70?' w':'');t.textContent=v>=85?'Lleno':v>=70?'Casi lleno':'Normal';
     });
+    const sum=d.contadores.reduce((a,b)=>a+b,0);$('tot').textContent=sum;
+    $('dist').innerHTML=d.contadores.map((c,i)=>`<i style="width:${sum?c/sum*100:0}%;background:${C[i]}"></i>`).join('');
+    const cl=cerrada||llenoAct;$('gate').className='sd '+(cl?'cl':'ab');$('sg').textContent=cl?'Cerrada':'Abierta';
+    $('gl').setAttribute('d',cl?'M7 11V8h10v3':'M7 11V7l9-3');
+    $('gs').textContent=cl?'Compuerta cerrada':'Compuerta abierta';
+    $('gd').textContent=llenoAct?'Cierre automático: '+d.lleno:cerrada?'Cerrada desde el panel':'Recibiendo residuos';
+    const bg=$('bg');bg.disabled=busy||llenoAct;bg.className=cerrada?'ba':'bc';
+    bg.textContent=llenoAct?'Vacía el recipiente para abrir':cerrada?'Abrir compuerta de entrada':'Cerrar compuerta de entrada';
+    $('bp').textContent=pausa?'Reanudar banda':'Pausar banda';
     const a=$('alerta');
-    if(d.lleno){a.style.display='block';a.textContent='RECIPIENTE LLENO: '+d.lleno.toUpperCase()+'. Vacíalo para reanudar.'}
-    else if(pausa){a.style.display='block';a.style.background='var(--wa)';a.style.color='#222';a.textContent='Banda en pausa desde el panel.'}
+    if(llenoAct){a.style.display='block';a.style.borderLeftColor='var(--er)';a.textContent='Recipiente lleno: '+d.lleno+'. Vacíalo para reanudar la operación.'}
+    else if(pausa){a.style.display='block';a.style.borderLeftColor='var(--wa)';a.textContent='La banda está en pausa desde el panel.'}
     else a.style.display='none';
-    if(d.lleno){a.style.background='var(--er)';a.style.color='#fff'}
-    if(d.eventos.length)$('ev').innerHTML=d.eventos.slice(0,15).map(e=>`<tr><td>${new Date(e.fecha).toLocaleTimeString()}</td><td>${T[e.evento]||e.evento}</td><td>${e.categoria||'-'}</td></tr>`).join('');
-  }catch(e){$('con').textContent='Servidor sin respuesta';$('con').className='chip'}
+    if(d.eventos.length)$('ev').innerHTML=d.eventos.slice(0,15).map(e=>`<tr><td>${new Date(e.fecha).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})}</td><td>${esc(T[e.evento]||e.evento)}</td><td>${e.categoria?`<i class="cd" style="background:${C[K(e.categoria)]||'var(--mut)'}"></i>${esc(e.categoria)}`:'–'}</td></tr>`).join('');
+  }catch(e){$('con').textContent='Sin respuesta';$('con').className='off'}
 }
-$('bp').onclick=async()=>{await fetch('/api/pausa',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pausa:!pausa})});act()};
-act();setInterval(act,2000);
+async function post(u,b){return fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)})}
+$('bg').onclick=async()=>{busy=true;$('bg').disabled=true;const n=!cerrada;
+  try{await post('/api/compuerta',{cerrar:n});toast(n?'Orden enviada: cerrar compuerta':'Orden enviada: abrir compuerta')}catch(e){toast('No se pudo enviar la orden')}
+  busy=false;act()};
+$('bp').onclick=async()=>{await post('/api/pausa',{pausa:!pausa});act()};
+function draw(){
+  const r=rows,el=$('hist');
+  if(!r)return;
+  if(r.length<2){el.innerHTML='<div class="empty">Aún no hay suficientes lecturas. Aparecerán cuando el Arduino envíe datos.</div>';return}
+  const W=Math.max(280,Math.round(el.clientWidth||600)),H=W<500?190:220,L=30,B=22,x=i=>L+i*(W-L-6)/(r.length-1),y=v=>8+(H-B-8)*(1-v/100);
+  const ks=['nivel_metal','nivel_organico','nivel_variado'],tm=d=>new Date(d).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  let g=[0,25,50,75,100].map(v=>`<line x1="${L}" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="var(--ln)"/><text x="0" y="${y(v)+4}">${v}</text>`).join('');
+  g+=`<line x1="${L}" x2="${W}" y1="${y(85)}" y2="${y(85)}" stroke="var(--er)" stroke-dasharray="4 4" opacity=".7"/>`;
+  g+=ks.map((k,j)=>`<polyline fill="none" stroke="${C[j]}" stroke-width="2" stroke-linejoin="round" points="${r.map((p,i)=>x(i).toFixed(1)+','+y(p[k]||0).toFixed(1)).join(' ')}"/>`).join('');
+  g+=`<text x="${L}" y="${H-5}">${tm(r[0].fecha)}</text><text x="${W}" y="${H-5}" text-anchor="end">${tm(r[r.length-1].fecha)}</text>`;
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="Historial de nivel por recipiente">${g}</svg><div class="lg">${N.map((n,i)=>`<span style="--c:${C[i]}">${n}</span>`).join('')}<span style="--c:var(--er)">Límite 85 %</span></div>`;
+}
+async function hist(){
+  try{rows=(await (await fetch('/api/historial')).json()).reverse();draw()}
+  catch(e){$('hist').innerHTML='<div class="empty">No se pudo cargar el historial.</div>'}
+}
+let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(draw,150)});
+act();hist();setInterval(act,2000);setInterval(hist,15000);
 </script></body></html>
