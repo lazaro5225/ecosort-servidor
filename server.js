@@ -198,14 +198,12 @@ app.get('/api/estado', (req, res) =>
 
 app.post('/api/pausa', (req, res) => {
   db.pausa = !!(req.body && req.body.pausa);
-  if (db.pausa) ordenBanda = false;
   guardar();
   res.json({ pausa: db.pausa });
 });
 
 // Activar la banda manualmente (un ciclo completo, sin clasificar)
 app.post('/api/banda', (req, res) => {
-  if (db.pausa) return res.status(409).json({ error: 'La banda está en pausa. Reanúdala primero.' });
   if (db.lleno) return res.status(409).json({ error: 'Recipiente lleno. Vacíalo primero.' });
   ordenBanda = true;
   registrarEvento('banda_manual_orden', '', false, false);
