@@ -38,6 +38,7 @@ main{padding:24px 28px 32px;display:grid;grid-template-columns:repeat(12,minmax(
 button{font:inherit;font-weight:500;min-height:44px;padding:9px 16px;border-radius:4px;border:1px solid var(--ac);cursor:pointer;width:100%;transition:background .15s,opacity .15s;touch-action:manipulation}
 button:focus-visible{outline:2px solid var(--ac);outline-offset:2px}button:disabled{opacity:.45;cursor:not-allowed}
 .bc{background:var(--er);border-color:var(--er);color:#fff}.ba{background:var(--ok);border-color:var(--ok);color:#fff}.bp{background:transparent;color:var(--ink);border-color:var(--ln);margin-top:8px}.bp:hover{background:var(--hd)}
+.bm{background:var(--ac);border-color:var(--ac);color:#fff;margin-top:8px}
 .dist{display:flex;height:6px;background:var(--ln);margin:16px 0 0;border-radius:1px;overflow:hidden}.dist i{display:block;transition:width .6s}
 .dl{font-size:12px;color:var(--mut);margin-top:6px}
 svg text{fill:var(--mut);font:11px "IBM Plex Sans",sans-serif}.lg{display:flex;flex-wrap:wrap;gap:6px 20px;font-size:13px;color:var(--mut);margin-top:8px}.lg span:before{content:"";display:inline-block;width:14px;height:2px;margin-right:7px;vertical-align:middle;background:var(--c)}
@@ -79,7 +80,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px 18px
 <aside>
 <div class="br"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#7FB69A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20c0-9 6-15 16-16 0 10-6 16-16 16z"/><path d="M4 20 14 10"/></svg><div><b>ECO-SORT ULS</b><span>Clasificador de residuos</span></div></div>
 <div class="st"><div>Arduino<em id="con" class="off">Sin conexión</em></div><div>Último dato<em id="up">–</em></div><div>Banda<em id="sb">–</em></div><div>Compuerta<em id="sg">–</em></div></div>
-<div class="ft">Panel de operación · v1.2</div>
+<div class="ft">Panel de operación · v1.3</div>
 </aside>
 <main>
 <div class="top"><h1>Centro de control</h1><p>Recipientes, compuerta de entrada y banda transportadora.</p></div>
@@ -94,6 +95,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px 18px
 <section class="pn c5" id="ctl"><h2>Control de operación</h2><div class="pb">
 <div class="sd ab" id="gate"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3" y="11" width="18" height="9" rx="1"/><path id="gl" d="M7 11V7l9-3"/></svg><div><b id="gs">Abierta</b><span id="gd">Recibiendo residuos</span></div></div>
 <button id="bg" class="bc">Cerrar compuerta de entrada</button>
+<button id="bm" class="bm">Activar banda ahora</button>
 <button id="bp" class="bp">Pausar banda</button>
 <div class="dist" id="dist"></div><div class="dl">Proporción de residuos por categoría</div></div></section>
 
@@ -105,12 +107,12 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px 18px
 <div id="toast"></div>
 <script>
 const $=id=>document.getElementById(id),N=['Metal','Orgánico','Variado'],C=['var(--m)','var(--o)','var(--v)'];
-const T={objeto:'Objeto clasificado',lleno:'Recipiente lleno',reanuda:'Reanudado (nivel bajo 70 %)',inicio:'Sistema iniciado',compuerta_cerrada:'Compuerta cerrada desde el panel',compuerta_abierta:'Compuerta abierta desde el panel'};
+const T={objeto:'Objeto clasificado',lleno:'Recipiente lleno',reanuda:'Reanudado (nivel bajo 70 %)',inicio:'Sistema iniciado',compuerta_cerrada:'Compuerta cerrada desde el panel',compuerta_abierta:'Compuerta abierta desde el panel',banda_manual_orden:'Orden de banda enviada desde el panel',banda_manual:'Ciclo manual de banda completado'};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const K=c=>{c=String(c).toLowerCase();return c.startsWith('met')?0:c.startsWith('org')?1:c.startsWith('var')?2:-1};
 $('bins').innerHTML=N.map((n,i)=>`<div class="row"><div><b>${n}</b><small id="c${i}">0 objetos</small></div><div class="bar"><i id="f${i}" style="background:${C[i]}"></i><u style="left:70%"></u><u style="left:85%"></u></div><div class="pc" id="p${i}">0 %</div><div class="tg" id="t${i}">Normal</div></div>`).join('');
 let pausa=false,cerrada=false,llenoAct=false,busy=false,rows=null;
-function toast(m){const t=$('toast');t.textContent=m;t.className='s';clearTimeout(toast.h);toast.h=setTimeout(()=>t.className='',2600)}
+function toast(m){const t=$('toast');t.textContent=m;t.className='s';clearTimeout(toast.h);toast.h=setTimeout(()=>t.className='',3200)}
 async function act(){
   try{
     const d=await (await fetch('/api/estado')).json();
@@ -132,6 +134,8 @@ async function act(){
     const bg=$('bg');bg.disabled=busy||llenoAct;bg.className=cerrada?'ba':'bc';
     bg.textContent=llenoAct?'Vacía el recipiente para abrir':cerrada?'Abrir compuerta de entrada':'Cerrar compuerta de entrada';
     $('bp').textContent=pausa?'Reanudar banda':'Pausar banda';
+    const bm=$('bm');bm.disabled=busy||pausa||llenoAct||!!d.bandaPendiente||!d.conectado;
+    bm.textContent=d.bandaPendiente?'Orden enviada, esperando al Arduino…':pausa?'Reanuda la banda para activarla':llenoAct?'Recipiente lleno':!d.conectado?'Arduino sin conexión':'Activar banda ahora';
     const a=$('alerta');
     if(llenoAct){a.style.display='block';a.style.borderLeftColor='var(--er)';a.textContent='Recipiente lleno: '+d.lleno+'. Vacíalo para reanudar la operación.'}
     else if(pausa){a.style.display='block';a.style.borderLeftColor='var(--wa)';a.textContent='La banda está en pausa desde el panel.'}
@@ -142,6 +146,12 @@ async function act(){
 async function post(u,b){return fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)})}
 $('bg').onclick=async()=>{busy=true;$('bg').disabled=true;const n=!cerrada;
   try{await post('/api/compuerta',{cerrar:n});toast(n?'Orden enviada: cerrar compuerta':'Orden enviada: abrir compuerta')}catch(e){toast('No se pudo enviar la orden')}
+  busy=false;act()};
+$('bm').onclick=async()=>{busy=true;$('bm').disabled=true;
+  try{
+    const r=await post('/api/banda',{});const j=await r.json().catch(()=>({}));
+    toast(r.ok?'Orden enviada: la banda arrancará en unos segundos':(j.error||'No se pudo enviar la orden'))
+  }catch(e){toast('No se pudo enviar la orden')}
   busy=false;act()};
 $('bp').onclick=async()=>{await post('/api/pausa',{pausa:!pausa});act()};
 function draw(){
