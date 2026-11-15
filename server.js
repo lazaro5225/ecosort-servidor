@@ -33,7 +33,7 @@ if (fs.existsSync(path.join(carpetaPublica, 'index.html'))) {
 }
 
 // ---------- Estado en memoria ----------
-let db = { pausa: false, apagado: false, cerrarCompuerta: false, ultimaConexion: 0, niveles: [0, 0, 0], contadores: [0, 0, 0], lleno: null, eventos: [] };
+let db = { pausa: false, cerrarCompuerta: false, ultimaConexion: 0, niveles: [0, 0, 0], contadores: [0, 0, 0], lleno: null, eventos: [] };
 try { db = Object.assign(db, JSON.parse(fs.readFileSync(ARCHIVO, 'utf8'))); } catch (e) {}
 
 // Orden de "activar banda" pendiente de entregar al Arduino (solo en memoria, no se repite al reiniciar)
@@ -85,7 +85,6 @@ async function iniciarBD() {
     )`);
 
   await pool.query('ALTER TABLE estado ADD COLUMN IF NOT EXISTS cerrar_compuerta BOOLEAN NOT NULL DEFAULT false');
-  await pool.query('ALTER TABLE estado ADD COLUMN IF NOT EXISTS apagado BOOLEAN NOT NULL DEFAULT false');
 
   // Recuperar el último estado guardado
   const est = await pool.query('SELECT * FROM estado WHERE id = 1');
@@ -93,7 +92,6 @@ async function iniciarBD() {
     const r = est.rows[0];
     db.pausa = r.pausa;
     db.cerrarCompuerta = !!r.cerrar_compuerta;
-    db.apagado = !!r.apagado;
     db.niveles = r.niveles;
     db.contadores = r.contadores;
     db.lleno = r.lleno || null;
@@ -117,11 +115,11 @@ async function iniciarBD() {
 function guardarEstadoBD() {
   if (!pool) return;
   pool.query(
-    `INSERT INTO estado (id, pausa, niveles, contadores, lleno, cerrar_compuerta, apagado)
-     VALUES (1, $1, $2, $3, $4, $5, $6)
+    `INSERT INTO estado (id, pausa, niveles, contadores, lleno, cerrar_compuerta)
+     VALUES (1, $1, $2, $3, $4, $5)
      ON CONFLICT (id) DO UPDATE
-     SET pausa = $1, niveles = $2, contadores = $3, lleno = $4, cerrar_compuerta = $5, apagado = $6`,
-    [db.pausa, JSON.stringify(db.niveles), JSON.stringify(db.contadores), db.lleno, db.cerrarCompuerta, db.apagado]
+     SET pausa = $1, niveles = $2, contadores = $3, lleno = $4, cerrar_compuerta = $5`,
+    [db.pausa, JSON.stringify(db.niveles), JSON.stringify(db.contadores), db.lleno, db.cerrarCompuerta]
   ).catch(errBD);
 }
 
@@ -168,7 +166,7 @@ const num3 = a => Array.isArray(a) && a.length === 3 && a.every(Number.isFinite)
 
 // Respuesta de comandos para el Arduino. La orden de banda se entrega una sola vez.
 function comandos() {
-  const r = { pausa: db.pausa, cerrarCompuerta: db.cerrarCompuerta, banda: ordenBanda && !db.apagado, apagado: db.apagado };
+  const r = { pausa: db.pausa, cerrarCompuerta: db.cerrarCompuerta, banda: ordenBanda };
   ordenBanda = false;
   return r;
 }
@@ -216,19 +214,8 @@ app.post('/api/pausa', (req, res) => {
   res.json({ pausa: db.pausa });
 });
 
-// Apagar / encender el sistema (modo apagado del Arduino). Exige PANEL_CLAVE configurada en Render.
-app.post('/api/apagado', (req, res) => {
-  if (!PANEL_CLAVE) return res.status(403).json({ error: 'Configura PANEL_CLAVE en Render para poder apagar el sistema.' });
-  db.apagado = !!(req.body && req.body.apagar);
-  ordenBanda = false;
-  registrarEvento(db.apagado ? 'sistema_apagado' : 'sistema_encendido', '', false, false);
-  guardar();
-  res.json({ apagado: db.apagado });
-});
-
 // Activar la banda manualmente (un ciclo completo, sin clasificar)
 app.post('/api/banda', (req, res) => {
-  if (db.apagado) return res.status(409).json({ error: 'El sistema está apagado.' });
   if (db.lleno) return res.status(409).json({ error: 'Recipiente lleno. Vacíalo primero.' });
   ordenBanda = true;
   registrarEvento('banda_manual_orden', '', false, false);
