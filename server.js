@@ -38,6 +38,8 @@ try { db = Object.assign(db, JSON.parse(fs.readFileSync(ARCHIVO, 'utf8'))); } ca
 
 // Orden de "activar banda" pendiente de entregar al Arduino (solo en memoria, no se repite al reiniciar)
 let ordenBanda = false;
+// Ciclo de deteccion en curso (para la cuenta regresiva del panel)
+let ciclo = null;
 let ultimaLectura = 0;
 
 // ---------- Base de datos (Neon / PostgreSQL) ----------
@@ -178,7 +180,14 @@ app.post('/api/datos', auth, (req, res) => {
 
   guardarLecturaBD();
 
-  if (b.evento && b.evento !== 'niveles') {
+  if (b.evento === 'ciclo') {
+    const dur = Number.isFinite(b.duracion) && b.duracion > 0 ? b.duracion : 18000;
+    ciclo = { fin: Date.now() + dur, dur, manual: !!b.manual };
+  } else {
+    ciclo = null;
+  }
+
+  if (b.evento && b.evento !== 'niveles' && b.evento !== 'ciclo') {
     registrarEvento(b.evento, b.categoria, b.inductivo, b.capacitivo);
   }
   guardar();
@@ -193,7 +202,10 @@ app.get('/api/comando', auth, (req, res) => {
 app.get('/api/estado', (req, res) =>
   res.json(Object.assign({}, db, {
     conectado: Date.now() - db.ultimaConexion < 25000,
-    bandaPendiente: ordenBanda
+    bandaPendiente: ordenBanda,
+    ciclo: (ciclo && Date.now() < ciclo.fin + 15000)
+      ? { restanteMs: Math.max(0, ciclo.fin - Date.now()), totalMs: ciclo.dur, manual: ciclo.manual }
+      : null
   })));
 
 app.post('/api/pausa', (req, res) => {
