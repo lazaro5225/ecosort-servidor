@@ -19,6 +19,7 @@ header::after{content:"";position:absolute;left:0;right:0;bottom:-8px;height:8px
 .cn i{width:9px;height:9px;border-radius:50%;background:#F08B85}.cn.on i{background:#6FE3A1;box-shadow:0 0 0 3px rgba(111,227,161,.25)}.cn small{opacity:.7;font-weight:500}
 main{max-width:1240px;margin:0 auto;padding:22px max(20px,env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;align-content:start}
 #alerta{display:none;grid-column:1/-1;padding:13px 18px;background:var(--sf);border:1px solid var(--er);border-left:6px solid var(--er);border-radius:10px;font-weight:600;color:var(--er)}
+#alerta.w{border-color:var(--wa);border-left-color:var(--wa);color:var(--wa)}
 .pn{background:var(--sf);border:1px solid var(--ln);border-radius:14px;min-width:0;overflow:hidden}
 .ph{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:14px 20px;border-bottom:1px solid var(--ln);background:var(--hd)}
 .ph h2{margin:0;font-size:15px;font-weight:700;border-left:4px solid var(--ac);padding-left:10px}.ph span{font-size:13px;color:var(--mut)}.ph b{color:var(--ink);font-size:15px}
@@ -82,6 +83,7 @@ footer{grid-column:1/-1;text-align:center;font-size:12px;color:var(--mut);paddin
 <div class="ct"><div class="cr"><b>Banda transportadora</b></div><p id="bd">Mueve la banda un ciclo completo (unos 18 s) sin clasificar.</p><button id="bm" class="pri">Activar banda</button></div>
 <div class="ct"><div class="cr"><b>Detección automática</b><span class="pl" id="dp">Activa</span></div><p>Cuando está bloqueada, el sensor IR no arranca la banda.</p><button id="bp">Bloquear detección</button></div>
 <div class="ct"><div class="cr"><b>Compuerta de entrada</b><span class="pl" id="gp">Abierta</span></div><p id="gd">Recibiendo residuos.</p><button id="bg" class="dg">Cerrar compuerta</button></div>
+<div class="ct"><div class="cr"><b>Sistema</b><span class="pl" id="sp">Encendido</span></div><p id="sd">Apagar detiene la banda, el motor y los sensores para que no se calienten.</p><button id="bs" class="dg">Apagar sistema</button></div>
 </section>
 
 <section class="pn c8"><div class="ph"><h2>Historial de nivel</h2><span>Últimas lecturas</span></div><div class="pb"><div id="hist"><div class="empty">Cargando…</div></div></div></section>
@@ -97,17 +99,17 @@ const D=[
  {n:'Metal',c:'var(--m)',i:'<path d="M12 3 20 7.5v9L12 21l-8-4.5v-9z"/><circle cx="12" cy="12" r="3"/>'},
  {n:'Orgánico',c:'var(--o)',i:'<path d="M5 19c0-9 5-14 14-14 0 9-5 14-14 14z"/><path d="M5 19 13 11"/>'},
  {n:'Variado',c:'var(--v)',i:'<path d="M12 3 3 8l9 5 9-5z"/><path d="m3 13 9 5 9-5"/>'}];
-const T={objeto:'Objeto clasificado',lleno:'Recipiente lleno',reanuda:'Operación reanudada',inicio:'Sistema iniciado',compuerta_cerrada:'Compuerta cerrada',compuerta_abierta:'Compuerta abierta',banda_manual_orden:'Banda activada desde el panel',banda_manual:'Ciclo manual completado'};
+const T={objeto:'Objeto clasificado',lleno:'Recipiente lleno',reanuda:'Operación reanudada',inicio:'Sistema iniciado',compuerta_cerrada:'Compuerta cerrada',compuerta_abierta:'Compuerta abierta',banda_manual_orden:'Banda activada desde el panel',banda_manual:'Ciclo manual completado',sistema_apagado:'Orden de apagado enviada',sistema_encendido:'Orden de encendido enviada',apagado:'Sistema apagado (confirmado por el Arduino)',encendido:'Sistema encendido (confirmado por el Arduino)'};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const K=c=>{c=String(c).toLowerCase();return c.startsWith('met')?0:c.startsWith('org')?1:c.startsWith('var')?2:-1};
 const hm=(d,s)=>new Date(d).toLocaleTimeString([], s?{hour:'2-digit',minute:'2-digit',second:'2-digit'}:{hour:'2-digit',minute:'2-digit'});
 $('bins').innerHTML=D.map((x,i)=>`<div class="bc"><div class="bin"><i id="f${i}"></i><u style="bottom:70%"></u><u style="bottom:85%"></u></div><div class="bi"><div class="bn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${x.c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${x.i}</svg>${x.n}</div><div class="bp" id="p${i}">0 %</div><div class="tg" id="t${i}">Normal</div><div class="bs" id="c${i}">0 objetos</div></div></div>`).join('');
-let pausa=false,cerrada=false,llenoAct=false,busy=false,rows=null,cy=null;
+let pausa=false,cerrada=false,llenoAct=false,busy=false,rows=null,cy=null,apag=false;
 function tickCy(){
   const s=$('cy');
-  if(!cy){s.className='pn cy';$('cyT').textContent=pausa?'Detección bloqueada':'En espera de objeto';$('cyS').textContent=pausa?'El sensor IR no iniciará la banda.':'Coloca un objeto frente al sensor IR.';$('cyN').textContent='–';$('cyP').style.width='0';return}
+  if(!cy){s.className='pn cy';$('cyT').textContent=apag?'Sistema apagado':pausa?'Detección bloqueada':'En espera de objeto';$('cyS').textContent=apag?'Banda, motor y sensores detenidos.':pausa?'El sensor IR no iniciará la banda.':'Coloca un objeto frente al sensor IR.';$('cyN').textContent='–';$('cyP').style.width='0';return}
   const r=Math.max(0,cy.fin-Date.now());s.className='pn cy run';
-  $('cyT').textContent=cy.manual?'Banda manual en marcha':'Analizando objeto';
+  $('cyT').textContent=apag?'Apagando al terminar el ciclo':cy.manual?'Banda manual en marcha':'Analizando objeto';
   $('cyS').textContent=r>0?(cy.manual?'Ciclo manual: no se clasifica.':'Los sensores inductivo y capacitivo están detectando el material.'):'Finalizando clasificación…';
   $('cyN').textContent=r>0?Math.ceil(r/1000)+' s':'…';
   $('cyP').style.width=Math.min(100,(1-r/cy.tot)*100)+'%';
@@ -117,7 +119,7 @@ function hace(ts){if(!ts)return'';const s=Math.max(0,Math.round((Date.now()-ts)/
 async function act(){
   try{
     const d=await (await fetch('/api/estado')).json();
-    pausa=d.pausa;cerrada=!!d.cerrarCompuerta;llenoAct=!!d.lleno;
+    pausa=d.pausa;apag=!!d.apagado;cerrada=!!d.cerrarCompuerta;llenoAct=!!d.lleno;
     if(d.ciclo){const fin=Date.now()+d.ciclo.restanteMs;if(!cy||Math.abs(fin-cy.fin)>1500)cy={fin,tot:d.ciclo.totalMs,manual:d.ciclo.manual}}else cy=null;
     tickCy();
     $('cn').className='cn'+(d.conectado?' on':'');$('cs').textContent=d.conectado?'Arduino conectado':'Arduino sin conexión';$('cu').textContent=hace(d.ultimaConexion);
@@ -129,12 +131,16 @@ async function act(){
       const c=d.contadores[i];$('c'+i).innerHTML='<b>'+c+'</b> '+(c==1?'objeto':'objetos')+' · '+(sum?Math.round(c/sum*100):0)+' %';
     });
     const a=$('alerta');
-    if(llenoAct){a.style.display='block';a.textContent='Recipiente lleno ('+d.lleno+'). Vacíalo para reanudar la operación.'}else a.style.display='none';
-    const bm=$('bm');bm.disabled=busy||llenoAct||!!d.bandaPendiente||!d.conectado;
+    if(apag){a.className='w';a.style.display='block';a.textContent='Sistema apagado: banda, motor y sensores detenidos. Enciéndelo desde Control > Sistema.'}
+    else if(llenoAct){a.className='';a.style.display='block';a.textContent='Recipiente lleno ('+d.lleno+'). Vacíalo para reanudar la operación.'}else a.style.display='none';
+    const bm=$('bm');bm.disabled=busy||apag||llenoAct||!!d.bandaPendiente||!d.conectado;
     bm.textContent=d.bandaPendiente?'Orden enviada…':'Activar banda';
-    $('bd').textContent=d.bandaPendiente?'Esperando que el Arduino reciba la orden (hasta 3 s).':!d.conectado?'El Arduino debe estar conectado para recibir la orden.':llenoAct?'No disponible mientras haya un recipiente lleno.':'Mueve la banda un ciclo completo (unos 18 s) sin clasificar.';
+    $('bd').textContent=apag?'No disponible con el sistema apagado.':d.bandaPendiente?'Esperando que el Arduino reciba la orden (hasta 3 s).':!d.conectado?'El Arduino debe estar conectado para recibir la orden.':llenoAct?'No disponible mientras haya un recipiente lleno.':'Mueve la banda un ciclo completo (unos 18 s) sin clasificar.';
     const dp=$('dp');dp.className='pl'+(pausa?' w':'');dp.textContent=pausa?'Bloqueada':'Activa';
     $('bp').textContent=pausa?'Desbloquear detección':'Bloquear detección';
+    const sp=$('sp');sp.className='pl'+(apag?' e':'');sp.textContent=apag?'Apagado':'Encendido';
+    $('sd').textContent=apag?'Banda, motor y sensores detenidos. El Arduino sigue en espera para poder encenderlo desde aquí.':'Apagar detiene la banda, el motor y los sensores para que no se calienten.';
+    $('bs').textContent=apag?'Encender sistema':'Apagar sistema';$('bs').className=apag?'pri':'dg';$('bs').disabled=busy;
     const cl=cerrada||llenoAct,gp=$('gp');gp.className='pl'+(cl?' e':'');gp.textContent=cl?'Cerrada':'Abierta';
     $('gd').textContent=llenoAct?'Cierre automático: recipiente '+d.lleno+' lleno.':cerrada?'Cerrada desde el panel. No entran residuos.':'Recibiendo residuos.';
     const bg=$('bg');bg.disabled=busy||llenoAct;bg.textContent=cerrada?'Abrir compuerta':'Cerrar compuerta';bg.className=cerrada?'pri':'dg';
@@ -150,6 +156,12 @@ $('bm').onclick=async()=>{busy=true;$('bm').disabled=true;
 $('bp').onclick=async()=>{try{await post('/api/pausa',{pausa:!pausa});toast(!pausa?'Detección bloqueada':'Detección activada')}catch(e){toast('No se pudo enviar la orden')}act()};
 $('bg').onclick=async()=>{busy=true;$('bg').disabled=true;const n=!cerrada;
   try{await post('/api/compuerta',{cerrar:n});toast(n?'Orden enviada: cerrar compuerta':'Orden enviada: abrir compuerta')}catch(e){toast('No se pudo enviar la orden')}
+  busy=false;act()};
+$('bs').onclick=async()=>{
+  const n=!apag;
+  if(n&&!confirm('¿Apagar todo el sistema? Se detendrán la banda, el motor y los sensores.'))return;
+  busy=true;$('bs').disabled=true;
+  try{const r=await post('/api/apagado',{apagar:n});const j=await r.json().catch(()=>({}));toast(r.ok?(n?'Orden enviada: apagando el sistema':'Orden enviada: encendiendo el sistema'):(j.error||'No se pudo enviar la orden'))}catch(e){toast('No se pudo enviar la orden')}
   busy=false;act()};
 function draw(){
   const r=rows,el=$('hist');
