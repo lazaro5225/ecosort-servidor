@@ -11,6 +11,7 @@ const ARCHIVO = path.join(__dirname, 'datos.json');
 app.use(express.json());
 
 // ---------- Protección opcional del panel ----------
+// Define PANEL_CLAVE (y opcionalmente PANEL_USUARIO) en Render para proteger el panel.
 const PANEL_USUARIO = process.env.PANEL_USUARIO || 'admin';
 const PANEL_CLAVE = process.env.PANEL_CLAVE;
 app.use((req, res, next) => {
@@ -35,12 +36,17 @@ if (fs.existsSync(path.join(carpetaPublica, 'index.html'))) {
 let db = { pausa: false, cerrarCompuerta: false, ultimaConexion: 0, niveles: [0, 0, 0], contadores: [0, 0, 0], lleno: null, eventos: [] };
 try { db = Object.assign(db, JSON.parse(fs.readFileSync(ARCHIVO, 'utf8'))); } catch (e) {}
 
+// Orden de "activar banda" pendiente de entregar al Arduino (solo en memoria, no se repite al reiniciar)
+let ordenBanda = false;
+let ultimaLectura = 0;
+
 // ---------- Base de datos (Neon / PostgreSQL) ----------
 const pool = process.env.DATABASE_URL
   ? new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } })
   : null;
 
 const errBD = e => console.error('Error BD:', e.message);
+if (pool) pool.on('error', errBD);
 
 async function iniciarBD() {
   if (!pool) {
@@ -98,6 +104,9 @@ async function iniciarBD() {
     inductivo: r.inductivo,
     capacitivo: r.capacitivo
   }));
+
+  // Limpieza: conservar solo 7 días de lecturas
+  pool.query("DELETE FROM lecturas WHERE fecha < now() - interval '7 days'").catch(errBD);
   console.log('Base de datos lista. Contadores recuperados:', db.contadores);
 }
 
@@ -114,6 +123,9 @@ function guardarEstadoBD() {
 
 function guardarLecturaBD() {
   if (!pool) return;
+  // Máximo una lectura por minuto para no llenar la base de datos
+  if (Date.now() - ultimaLectura < 60000) return;
+  ultimaLectura = Date.now();
   pool.query(
     `INSERT INTO lecturas
      (nivel_metal, nivel_organico, nivel_variado, cont_metal, cont_organico, cont_variado)
@@ -135,63 +147,81 @@ const guardar = () => {
   guardarEstadoBD();
 };
 
+function registrarEvento(evento, categoria, inductivo, capacitivo) {
+  const e = {
+    fecha: new Date().toISOString(), evento, categoria: categoria || '',
+    inductivo: !!inductivo, capacitivo: !!capacitivo
+  };
+  db.eventos.unshift(e);
+  db.eventos = db.eventos.slice(0, 200);
+  guardarEventoBD(e);
+}
+
 // ---------- API ----------
 const auth = (req, res, next) =>
   req.get('x-clave') === CLAVE ? next() : res.status(401).json({ error: 'clave incorrecta' });
 const num3 = a => Array.isArray(a) && a.length === 3 && a.every(Number.isFinite);
 
+// Respuesta de comandos para el Arduino. La orden de banda se entrega una sola vez.
+function comandos() {
+  const r = { pausa: db.pausa, cerrarCompuerta: db.cerrarCompuerta, banda: ordenBanda };
+  ordenBanda = false;
+  return r;
+}
+
 app.post('/api/datos', auth, (req, res) => {
   const b = req.body || {};
   if (num3(b.niveles)) db.niveles = b.niveles;
   if (num3(b.contadores)) db.contadores = b.contadores;
-  db.lleno = b.lleno || null;
+  if (b.lleno !== undefined) db.lleno = b.lleno || null;
   db.ultimaConexion = Date.now();
 
   guardarLecturaBD();
 
   if (b.evento && b.evento !== 'niveles') {
-    const e = {
-      fecha: new Date().toISOString(), evento: b.evento, categoria: b.categoria || '',
-      inductivo: !!b.inductivo, capacitivo: !!b.capacitivo
-    };
-    db.eventos.unshift(e);
-    db.eventos = db.eventos.slice(0, 200);
-    guardarEventoBD(e);
+    registrarEvento(b.evento, b.categoria, b.inductivo, b.capacitivo);
   }
   guardar();
-  res.json({ pausa: db.pausa, cerrarCompuerta: db.cerrarCompuerta });
+  res.json(comandos());
 });
 
 app.get('/api/comando', auth, (req, res) => {
   db.ultimaConexion = Date.now();
-  res.json({ pausa: db.pausa, cerrarCompuerta: db.cerrarCompuerta });
+  res.json(comandos());
 });
 
 app.get('/api/estado', (req, res) =>
-  res.json(Object.assign({}, db, { conectado: Date.now() - db.ultimaConexion < 25000 })));
+  res.json(Object.assign({}, db, {
+    conectado: Date.now() - db.ultimaConexion < 25000,
+    bandaPendiente: ordenBanda
+  })));
 
 app.post('/api/pausa', (req, res) => {
   db.pausa = !!(req.body && req.body.pausa);
+  if (db.pausa) ordenBanda = false;
   guardar();
   res.json({ pausa: db.pausa });
+});
+
+// Activar la banda manualmente (un ciclo completo, sin clasificar)
+app.post('/api/banda', (req, res) => {
+  if (db.pausa) return res.status(409).json({ error: 'La banda está en pausa. Reanúdala primero.' });
+  if (db.lleno) return res.status(409).json({ error: 'Recipiente lleno. Vacíalo primero.' });
+  ordenBanda = true;
+  registrarEvento('banda_manual_orden', '', false, false);
+  guardar();
+  res.json({ ok: true, pendiente: true });
 });
 
 // Cerrar / abrir manualmente la compuerta de entrada (servo)
 app.post('/api/compuerta', (req, res) => {
   db.cerrarCompuerta = !!(req.body && req.body.cerrar);
-  const e = {
-    fecha: new Date().toISOString(),
-    evento: db.cerrarCompuerta ? 'compuerta_cerrada' : 'compuerta_abierta',
-    categoria: '', inductivo: false, capacitivo: false
-  };
-  db.eventos.unshift(e);
-  db.eventos = db.eventos.slice(0, 200);
-  guardarEventoBD(e);
+  registrarEvento(db.cerrarCompuerta ? 'compuerta_cerrada' : 'compuerta_abierta', '', false, false);
   guardar();
   res.json({ cerrarCompuerta: db.cerrarCompuerta });
 });
 
-// Historial de lecturas (para gráficas futuras)
+// Historial de lecturas
 app.get('/api/historial', async (req, res) => {
   if (!pool) return res.json([]);
   try {
