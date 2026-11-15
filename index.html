@@ -50,10 +50,14 @@ svg text{fill:var(--mut);font:11px Manrope,sans-serif}
 .ev li{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;padding:10px 0;border-bottom:1px solid var(--ln)}.ev li:last-child{border-bottom:0}
 .ev time{grid-row:span 2;font-size:12.5px;color:var(--mut);padding-top:1px}.ev b{font-weight:600}
 .ev em{font-style:normal;font-size:12.5px;color:var(--mut)}.ev i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.cy{grid-column:1/-1}.cyb{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px}.cyb small{display:block;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}.cyb b{font-size:18px;font-weight:700}.cyb span{font-size:13px;color:var(--mut)}
+.cyn{font-size:44px;font-weight:800;line-height:1;color:var(--mut);min-width:90px;text-align:right}.cy.run .cyn{color:var(--ac)}
+.pg{height:8px;background:var(--hd);border-top:1px solid var(--ln)}.pg i{display:block;height:100%;width:0;background:var(--ac);transition:width .3s linear}
 footer{grid-column:1/-1;text-align:center;font-size:12px;color:var(--mut);padding-top:6px}
 #toast{position:fixed;right:24px;bottom:calc(24px + env(safe-area-inset-bottom));background:var(--br);color:#fff;padding:12px 18px;border-radius:10px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:9;border-left:4px solid #6FE3A1}#toast.s{opacity:1}
 @media(max-width:1000px){.c8,.c4{grid-column:1/-1}}
 @media(max-width:700px){
+ .cyn{font-size:36px;min-width:70px}.cyb{padding:14px 16px}.cyb b{font-size:16px}
  .bins{grid-template-columns:1fr}.bc{padding:12px}.bin{height:96px}.bp{font-size:26px}
  main{gap:14px;padding-top:16px}.pb{padding:14px}.ct{padding:14px 16px}.ph{padding:12px 16px}.ev{padding:4px 16px 8px}
  .br b{font-size:16px}.br span{display:none}.cn small{display:none}
@@ -68,6 +72,8 @@ footer{grid-column:1/-1;text-align:center;font-size:12px;color:var(--mut);paddin
 </div></header>
 <main>
 <div id="alerta"></div>
+
+<section class="pn cy" id="cy"><div class="cyb"><div><small>Ciclo de detección</small><b id="cyT">En espera de objeto</b><br><span id="cyS">Coloca un objeto frente al sensor IR.</span></div><div class="cyn" id="cyN">–</div></div><div class="pg"><i id="cyP"></i></div></section>
 
 <section class="pn c8"><div class="ph"><h2>Recipientes</h2><span>Total clasificado: <b id="tot">0</b></span></div>
 <div class="pb"><div class="bins" id="bins"></div><p class="lim">Línea punteada: alerta al 70 % · bloqueo de la compuerta al 85 %.</p></div></section>
@@ -96,13 +102,24 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const K=c=>{c=String(c).toLowerCase();return c.startsWith('met')?0:c.startsWith('org')?1:c.startsWith('var')?2:-1};
 const hm=(d,s)=>new Date(d).toLocaleTimeString([], s?{hour:'2-digit',minute:'2-digit',second:'2-digit'}:{hour:'2-digit',minute:'2-digit'});
 $('bins').innerHTML=D.map((x,i)=>`<div class="bc"><div class="bin"><i id="f${i}"></i><u style="bottom:70%"></u><u style="bottom:85%"></u></div><div class="bi"><div class="bn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${x.c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${x.i}</svg>${x.n}</div><div class="bp" id="p${i}">0 %</div><div class="tg" id="t${i}">Normal</div><div class="bs" id="c${i}">0 objetos</div></div></div>`).join('');
-let pausa=false,cerrada=false,llenoAct=false,busy=false,rows=null;
+let pausa=false,cerrada=false,llenoAct=false,busy=false,rows=null,cy=null;
+function tickCy(){
+  const s=$('cy');
+  if(!cy){s.className='pn cy';$('cyT').textContent=pausa?'Detección bloqueada':'En espera de objeto';$('cyS').textContent=pausa?'El sensor IR no iniciará la banda.':'Coloca un objeto frente al sensor IR.';$('cyN').textContent='–';$('cyP').style.width='0';return}
+  const r=Math.max(0,cy.fin-Date.now());s.className='pn cy run';
+  $('cyT').textContent=cy.manual?'Banda manual en marcha':'Analizando objeto';
+  $('cyS').textContent=r>0?(cy.manual?'Ciclo manual: no se clasifica.':'Los sensores inductivo y capacitivo están detectando el material.'):'Finalizando clasificación…';
+  $('cyN').textContent=r>0?Math.ceil(r/1000)+' s':'…';
+  $('cyP').style.width=Math.min(100,(1-r/cy.tot)*100)+'%';
+}
 function toast(m){const t=$('toast');t.textContent=m;t.className='s';clearTimeout(toast.h);toast.h=setTimeout(()=>t.className='',3200)}
 function hace(ts){if(!ts)return'';const s=Math.max(0,Math.round((Date.now()-ts)/1000));return s<60?'hace '+s+' s':s<3600?'hace '+Math.floor(s/60)+' min':hm(ts)}
 async function act(){
   try{
     const d=await (await fetch('/api/estado')).json();
     pausa=d.pausa;cerrada=!!d.cerrarCompuerta;llenoAct=!!d.lleno;
+    if(d.ciclo){const fin=Date.now()+d.ciclo.restanteMs;if(!cy||Math.abs(fin-cy.fin)>1500)cy={fin,tot:d.ciclo.totalMs,manual:d.ciclo.manual}}else cy=null;
+    tickCy();
     $('cn').className='cn'+(d.conectado?' on':'');$('cs').textContent=d.conectado?'Arduino conectado':'Arduino sin conexión';$('cu').textContent=hace(d.ultimaConexion);
     const sum=d.contadores.reduce((a,b)=>a+b,0);$('tot').textContent=sum;
     d.niveles.forEach((v,i)=>{
@@ -151,5 +168,5 @@ async function hist(){
   catch(e){$('hist').innerHTML='<div class="empty">No se pudo cargar el historial.</div>'}
 }
 let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(draw,150)});
-act();hist();setInterval(act,2000);setInterval(hist,15000);
+act();hist();setInterval(tickCy,250);setInterval(act,2000);setInterval(hist,15000);
 </script></body></html>
