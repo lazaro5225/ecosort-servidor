@@ -187,5 +187,5 @@ async function hist(){
   catch(e){$('hist').innerHTML='<div class="empty">No se pudo cargar el historial.</div>'}
 }
 let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(draw,150)});
-act();hist();setInterval(tickCy,250);setInterval(act,2000);setInterval(hist,15000);
+act();hist();setInterval(tickCy,250);setInterval(act,1000);setInterval(hist,15000);
 </script></body></html>
