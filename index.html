@@ -56,7 +56,6 @@ svg text{fill:var(--mut);font:11px Manrope,sans-serif}
 .cy{grid-column:1/-1}.cyb{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px}.cyb small{display:block;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}.cyb b{font-size:18px;font-weight:700}.cyb span{font-size:13px;color:var(--mut)}
 .cyn{font-size:44px;font-weight:800;line-height:1;color:var(--mut);min-width:90px;text-align:right}.cy.run .cyn{color:var(--ac)}
 .pg{height:8px;background:var(--hd);border-top:1px solid var(--ln)}.pg i{display:block;height:100%;width:0;background:var(--ac);transition:width .3s linear}
-footer{grid-column:1/-1;text-align:center;font-size:12px;color:var(--mut);padding-top:6px}
 #toast{position:fixed;right:24px;bottom:calc(24px + env(safe-area-inset-bottom));background:var(--hd);color:var(--ink);box-shadow:0 4px 18px rgba(0,0,0,.5);padding:12px 18px;border-radius:10px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:9;border-left:4px solid var(--ac)}#toast.s{opacity:1}
 @media(max-width:1000px){.c8,.c4{grid-column:1/-1}}
 @media(max-width:700px){
@@ -87,19 +86,9 @@ footer{grid-column:1/-1;text-align:center;font-size:12px;color:var(--mut);paddin
 <div class="ct"><div class="cr"><b>Compuerta de entrada</b><span class="pl" id="gp">Abierta</span></div><p id="gd">Recibiendo residuos.</p><button id="bg" class="dg">Cerrar compuerta</button></div>
 </section>
 
-<section class="pn cy"><div class="ph"><h2>Conectividad IoT</h2><span>Telemetría y supervisión remota</span></div><div class="pb">
-  <div class="bins">
-    <div class="bc"><div class="bi"><div class="bn">1. Dispositivo</div><div class="bs">Arduino UNO R4 WiFi mide la distancia con tres HC-SR04, uno por recipiente, y detecta el llenado al instante.</div></div></div>
-    <div class="bc"><div class="bi"><div class="bn">2. Comunicación</div><div class="bs">Los estados y contadores se envían mediante solicitudes HTTPS a la API del servidor.</div></div></div>
-    <div class="bc"><div class="bi"><div class="bn">3. Nube y panel</div><div class="bs">Node.js recibe la telemetría, guarda el estado en PostgreSQL y actualiza este panel web.</div></div></div>
-  </div>
-  <p class="lim" id="iotdetail">Esperando la primera comunicación del Arduino.</p>
-</div></section>
 <section class="pn c8"><div class="ph"><h2>Historial de estados IoT</h2><span>Disponible / lleno</span></div><div class="pb"><div id="hist"><div class="empty">Cargando…</div></div></div></section>
 
 <section class="pn c4"><div class="ph"><h2>Actividad reciente</h2></div><ul class="ev" id="ev"><li><span class="empty" style="grid-column:1/-1">Sin eventos todavía.</span></li></ul></section>
-
-<footer>ECO-SORT ULS · IoT: Arduino UNO R4 WiFi → API HTTPS → PostgreSQL → Panel web</footer>
 </main>
 <div id="toast"></div>
 <script>
@@ -132,9 +121,6 @@ async function act(){
     if(d.ciclo){const fin=Date.now()+d.ciclo.restanteMs;if(!cy||Math.abs(fin-cy.fin)>1500)cy={fin,tot:d.ciclo.totalMs,manual:d.ciclo.manual}}else cy=null;
     tickCy();
     $('cn').className='cn'+(d.conectado?' on':'');$('cs').textContent=d.conectado?'Arduino conectado':'Arduino sin conexión';$('cu').textContent=hace(d.ultimaConexion);
-    $('iotdetail').textContent=d.conectado
-      ? 'IoT conectado: última telemetría '+hace(d.ultimaConexion)+'. El servidor recibe datos del Arduino y responde a sus consultas.'
-      : 'IoT desconectado: el panel no ha recibido datos del Arduino en los últimos 25 segundos.';
     const sum=d.contadores.reduce((a,b)=>a+b,0);$('tot').textContent=sum;
     const estados=d.niveles.map((v,i)=>Array.isArray(d.llenos)?!!d.llenos[i]:Number(v)>=100);
     estados.forEach((lleno,i)=>{
@@ -190,7 +176,6 @@ function draw(){
     const y0=TOP+j*LH,yH=y0+8,yL=y0+LH-12;
     const f=r.map(p=>(Number(p[k])||0)>=100);
     g+=`<line x1="${L}" x2="${W-R}" y1="${yL}" y2="${yL}" stroke="var(--ln)"/><text x="0" y="${(yH+yL)/2+4}">${D[j].n}</text>`;
-    // zonas llenas sombreadas en rojo
     for(let i=0;i<f.length;i++){
       if(!f[i])continue;
       let e=i;while(e+1<f.length&&f[e+1])e++;
@@ -198,7 +183,6 @@ function draw(){
       g+=`<rect x="${xa.toFixed(1)}" y="${yH}" width="${Math.max(2,xb-xa).toFixed(1)}" height="${yL-yH}" fill="var(--er)" opacity=".28"/>`;
       i=e;
     }
-    // línea escalonada
     let d='';
     f.forEach((v,i)=>{const yy=v?yH:yL,xx=x(ts[i]).toFixed(1);d+=i===0?`M${xx},${yy}`:`H${xx}V${yy}`});
     g+=`<path d="${d}" fill="none" stroke="${D[j].c}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>`;
