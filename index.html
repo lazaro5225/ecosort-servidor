@@ -76,7 +76,7 @@ footer{grid-column:1/-1;text-align:center;font-size:12px;color:var(--mut);paddin
 <section class="pn cy" id="cy"><div class="cyb"><div><small>Ciclo de detección</small><b id="cyT">En espera de objeto</b><br><span id="cyS">Coloca un objeto frente al sensor IR.</span></div><div class="cyn" id="cyN">–</div></div><div class="pg"><i id="cyP"></i></div></section>
 
 <section class="pn c8"><div class="ph"><h2>Estado de recipientes</h2><span>Total clasificado: <b id="tot">0</b></span></div>
-<div class="pb"><div class="bins" id="bins"></div><p class="lim">Umbral de detección: 9 cm o menos durante 4 lecturas consecutivas.</p></div></section>
+<div class="pb"><div class="bins" id="bins"></div><p class="lim">Umbral de detección: un recipiente se marca lleno al detectar un objeto a 9 cm o menos.</p></div></section>
 
 <section class="pn c4"><div class="ph"><h2>Control</h2></div>
 <div class="ct"><div class="cr"><b>Banda transportadora</b></div><p id="bd">Mueve la banda un ciclo completo (unos 18 s) sin clasificar.</p><button id="bm" class="pri">Activar banda</button></div>
@@ -86,7 +86,7 @@ footer{grid-column:1/-1;text-align:center;font-size:12px;color:var(--mut);paddin
 
 <section class="pn cy"><div class="ph"><h2>Conectividad IoT</h2><span>Telemetría y supervisión remota</span></div><div class="pb">
   <div class="bins">
-    <div class="bc"><div class="bi"><div class="bn">1. Dispositivo</div><div class="bs">Arduino UNO R4 WiFi consulta los tres HC-SR04 y confirma el estado con 4 lecturas consecutivas.</div></div></div>
+    <div class="bc"><div class="bi"><div class="bn">1. Dispositivo</div><div class="bs">Arduino UNO R4 WiFi mide la distancia con tres HC-SR04, uno por recipiente, y detecta el llenado al instante.</div></div></div>
     <div class="bc"><div class="bi"><div class="bn">2. Comunicación</div><div class="bs">Los estados y contadores se envían mediante solicitudes HTTPS a la API del servidor.</div></div></div>
     <div class="bc"><div class="bi"><div class="bn">3. Nube y panel</div><div class="bs">Node.js recibe la telemetría, guarda el estado en PostgreSQL y actualiza este panel web.</div></div></div>
   </div>
@@ -109,7 +109,7 @@ const T={objeto:'Objeto clasificado',lleno:'Recipiente lleno',reanuda:'Operació
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const K=c=>{c=String(c).toLowerCase();return c.startsWith('met')?0:c.startsWith('org')?1:c.startsWith('var')?2:-1};
 const hm=(d,s)=>new Date(d).toLocaleTimeString([], s?{hour:'2-digit',minute:'2-digit',second:'2-digit'}:{hour:'2-digit',minute:'2-digit'});
-$('bins').innerHTML=D.map((x,i)=>`<div class="bc"><div class="bin"><i id="f${i}"></i></div><div class="bi"><div class="bn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${x.c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${x.i}</svg>${x.n}</div><div class="bp" id="p${i}">DISPONIBLE</div><div class="tg" id="t${i}">Esperando lecturas</div><div class="bs" id="c${i}">0 objetos · Confirmación 0/4</div></div></div>`).join('');
+$('bins').innerHTML=D.map((x,i)=>`<div class="bc"><div class="bin"><i id="f${i}"></i></div><div class="bi"><div class="bn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${x.c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${x.i}</svg>${x.n}</div><div class="bp" id="p${i}">DISPONIBLE</div><div class="tg" id="t${i}">Esperando lecturas</div><div class="bs" id="c${i}">0 objetos</div></div></div>`).join('');
 let pausa=false,cerrada=false,llenoAct=false,busy=false,rows=null,cy=null;
 function tickCy(){
   const s=$('cy');
@@ -135,16 +135,15 @@ async function act(){
     const sum=d.contadores.reduce((a,b)=>a+b,0);$('tot').textContent=sum;
     d.niveles.forEach((v,i)=>{
       const lleno=Array.isArray(d.llenos)?!!d.llenos[i]:Number(v)>=100;
-      const confirmacion=Array.isArray(d.confirmaciones)?Number(d.confirmaciones[i]||0):0;
       const f=$('f'+i);
       f.style.height=lleno?'100%':'0%';
       f.style.background=lleno?'var(--er)':D[i].c;
       $('p'+i).textContent=lleno?'LLENO':'DISPONIBLE';
       const t=$('t'+i);
       t.className='tg'+(lleno?' e':'');
-      t.textContent=lleno?'Confirmado 4/4':'En observación';
+      t.textContent=lleno?'Detectado':'Monitoreando';
       const c=d.contadores[i];
-      $('c'+i).innerHTML='<b>'+c+'</b> '+(c==1?'objeto':'objetos')+' · '+(lleno?'Umbral confirmado':('Lecturas: '+confirmacion+'/4'));
+      $('c'+i).innerHTML='<b>'+c+'</b> '+(c==1?'objeto':'objetos')+' · '+(lleno?'Lleno detectado':'Bajo el umbral');
     });
     const a=$('alerta');
     const llenosTxt=Array.isArray(d.llenos)?D.filter((_,i)=>d.llenos[i]).map(x=>x.n.toLowerCase()).join(', '):d.lleno;
@@ -180,7 +179,7 @@ function draw(){
   
   g+=ks.map((k,j)=>`<polyline fill="none" stroke="${D[j].c}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" points="${r.map((p,i)=>x(i).toFixed(1)+','+y(p[k]||0).toFixed(1)).join(' ')}"/>`).join('');
   g+=`<text x="${L}" y="${H-5}">${hm(r[0].fecha)}</text><text x="${W}" y="${H-5}" text-anchor="end">${hm(r[r.length-1].fecha)}</text>`;
-  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="Historial de estados IoT por recipiente">${g}</svg><div class="lg">${D.map(x=>`<span style="--c:${x.c}">${x.n}</span>`).join('')}<span style="--c:var(--er)">LLENO confirmado (4/4)</span></div>`;
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="Historial de estados IoT por recipiente">${g}</svg><div class="lg">${D.map(x=>`<span style="--c:${x.c}">${x.n}</span>`).join('')}<span style="--c:var(--er)">LLENO detectado</span></div>`;
 }
 async function hist(){
   try{rows=(await (await fetch('/api/historial')).json()).reverse();draw()}
