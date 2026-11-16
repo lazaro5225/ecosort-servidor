@@ -24,13 +24,15 @@ main{max-width:1240px;margin:0 auto;padding:22px max(20px,env(safe-area-inset-ri
 .ph h2{margin:0;font-size:15px;font-weight:700;border-left:4px solid var(--ac);padding-left:10px}.ph span{font-size:13px;color:var(--mut)}.ph b{color:var(--ink);font-size:15px}
 .pb{padding:18px 20px}.c8{grid-column:span 8}.c4{grid-column:span 4}
 .bins{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
-.bc{display:flex;gap:14px;align-items:stretch;padding:14px;border:1px solid var(--ln);border-radius:12px;background:var(--hd)}
+.bc{display:flex;gap:14px;align-items:stretch;padding:14px;border:1px solid var(--ln);border-radius:12px;background:var(--hd);transition:border-color .3s,background .3s}
+.bc.full{border-color:var(--er);background:color-mix(in srgb,var(--er) 8%,var(--hd))}
 .bin{position:relative;flex:none;width:54px;height:132px;border:2px solid var(--ln);border-radius:7px 7px 14px 14px;overflow:hidden;background:var(--sf)}
-.bin i{position:absolute;left:0;right:0;bottom:0;height:0;transition:height .8s ease,background .3s}
-.bin u{position:absolute;left:0;right:0;height:0;border-top:1.5px dashed var(--mut);opacity:.7}
+.bin i{position:absolute;left:0;right:0;bottom:0;height:0;transition:height .5s ease,background .3s}
+.bin span{position:absolute;inset:0;display:grid;place-items:center;font-size:28px;font-weight:800;z-index:1;color:var(--ok)}
+.bc.full .bin{border-color:var(--er)}.bc.full .bin span{color:#fff}
 .bi{display:flex;flex-direction:column;justify-content:space-between;min-width:0}
 .bn{display:flex;align-items:center;gap:7px;font-weight:700}.bn svg{flex:none}
-.bp{font-size:30px;font-weight:800;line-height:1.1}
+.bp{font-size:28px;font-weight:800;line-height:1.1;color:var(--ok)}.bc.full .bp{color:var(--er)}
 .tg{align-self:flex-start;font-size:12px;font-weight:700;padding:2px 10px;border-radius:99px;background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok)}.tg.w{background:color-mix(in srgb,var(--wa) 18%,transparent);color:var(--wa)}.tg.e{background:color-mix(in srgb,var(--er) 18%,transparent);color:var(--er)}
 .bs{font-size:12.5px;color:var(--mut)}.bs b{color:var(--ink)}
 .lim{font-size:12px;color:var(--mut);margin:14px 0 0}
@@ -44,6 +46,7 @@ button:focus-visible{outline:2px solid var(--ac);outline-offset:2px}button:disab
 button.pri{background:var(--ac);border-color:var(--ac);color:#111}button.pri:hover:not(:disabled){background:var(--ac);filter:brightness(1.08)}
 button.dg{color:var(--er);border-color:var(--er)}
 .lg{display:flex;flex-wrap:wrap;gap:6px 20px;font-size:13px;color:var(--mut);margin-top:10px}.lg span:before{content:"";display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:7px;vertical-align:middle;background:var(--c)}
+.lg span.sh:before{height:10px;opacity:.5}
 svg text{fill:var(--mut);font:11px Manrope,sans-serif}
 .empty{color:var(--mut);padding:30px 14px;text-align:center}
 .ev{list-style:none;margin:0;padding:6px 20px 10px;max-height:340px;overflow:auto}
@@ -76,7 +79,7 @@ footer{grid-column:1/-1;text-align:center;font-size:12px;color:var(--mut);paddin
 <section class="pn cy" id="cy"><div class="cyb"><div><small>Ciclo de detección</small><b id="cyT">En espera de objeto</b><br><span id="cyS">Coloca un objeto frente al sensor IR.</span></div><div class="cyn" id="cyN">–</div></div><div class="pg"><i id="cyP"></i></div></section>
 
 <section class="pn c8"><div class="ph"><h2>Estado de recipientes</h2><span>Total clasificado: <b id="tot">0</b></span></div>
-<div class="pb"><div class="bins" id="bins"></div><p class="lim">Umbral de detección: un recipiente se marca lleno al detectar un objeto a 9 cm o menos.</p></div></section>
+<div class="pb"><div class="bins" id="bins"></div><p class="lim">Un recipiente se marca LLENO cuando su sensor ultrasónico detecta un objeto a 13 cm o menos.</p></div></section>
 
 <section class="pn c4"><div class="ph"><h2>Control</h2></div>
 <div class="ct"><div class="cr"><b>Banda transportadora</b></div><p id="bd">Mueve la banda un ciclo completo (unos 18 s) sin clasificar.</p><button id="bm" class="pri">Activar banda</button></div>
@@ -109,7 +112,7 @@ const T={objeto:'Objeto clasificado',lleno:'Recipiente lleno',reanuda:'Operació
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const K=c=>{c=String(c).toLowerCase();return c.startsWith('met')?0:c.startsWith('org')?1:c.startsWith('var')?2:-1};
 const hm=(d,s)=>new Date(d).toLocaleTimeString([], s?{hour:'2-digit',minute:'2-digit',second:'2-digit'}:{hour:'2-digit',minute:'2-digit'});
-$('bins').innerHTML=D.map((x,i)=>`<div class="bc"><div class="bin"><i id="f${i}"></i></div><div class="bi"><div class="bn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${x.c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${x.i}</svg>${x.n}</div><div class="bp" id="p${i}">DISPONIBLE</div><div class="tg" id="t${i}">Esperando lecturas</div><div class="bs" id="c${i}">0 objetos</div></div></div>`).join('');
+$('bins').innerHTML=D.map((x,i)=>`<div class="bc" id="bc${i}"><div class="bin"><i id="f${i}"></i><span id="s${i}">✓</span></div><div class="bi"><div class="bn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${x.c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${x.i}</svg>${x.n}</div><div class="bp" id="p${i}">DISPONIBLE</div><div class="tg" id="t${i}">Esperando lecturas</div><div class="bs" id="c${i}">0 objetos</div></div></div>`).join('');
 let pausa=false,cerrada=false,llenoAct=false,busy=false,rows=null,cy=null;
 function tickCy(){
   const s=$('cy');
@@ -133,29 +136,32 @@ async function act(){
       ? 'IoT conectado: última telemetría '+hace(d.ultimaConexion)+'. El servidor recibe datos del Arduino y responde a sus consultas.'
       : 'IoT desconectado: el panel no ha recibido datos del Arduino en los últimos 25 segundos.';
     const sum=d.contadores.reduce((a,b)=>a+b,0);$('tot').textContent=sum;
-    d.niveles.forEach((v,i)=>{
-      const lleno=Array.isArray(d.llenos)?!!d.llenos[i]:Number(v)>=100;
+    const estados=d.niveles.map((v,i)=>Array.isArray(d.llenos)?!!d.llenos[i]:Number(v)>=100);
+    estados.forEach((lleno,i)=>{
+      $('bc'+i).className='bc'+(lleno?' full':'');
       const f=$('f'+i);
       f.style.height=lleno?'100%':'0%';
-      f.style.background=lleno?'var(--er)':D[i].c;
+      f.style.background='var(--er)';
+      $('s'+i).textContent=lleno?'!':'✓';
       $('p'+i).textContent=lleno?'LLENO':'DISPONIBLE';
       const t=$('t'+i);
       t.className='tg'+(lleno?' e':'');
-      t.textContent=lleno?'Detectado':'Monitoreando';
+      t.textContent=lleno?'Vaciar recipiente':'Listo para recibir';
       const c=d.contadores[i];
-      $('c'+i).innerHTML='<b>'+c+'</b> '+(c==1?'objeto':'objetos')+' · '+(lleno?'Lleno detectado':'Bajo el umbral');
+      $('c'+i).innerHTML='<b>'+c+'</b> '+(c==1?'objeto':'objetos')+' clasificados';
     });
     const a=$('alerta');
-    const llenosTxt=Array.isArray(d.llenos)?D.filter((_,i)=>d.llenos[i]).map(x=>x.n.toLowerCase()).join(', '):d.lleno;
-    if(llenoAct){a.style.display='block';a.textContent='Recipiente lleno ('+(llenosTxt||d.lleno)+'). Vacíalo para reanudar la operación.'}else a.style.display='none';
-    const bm=$('bm');bm.disabled=busy||llenoAct||!!d.bandaPendiente||!d.conectado;
+    const llenosTxt=D.filter((_,i)=>estados[i]).map(x=>x.n.toLowerCase()).join(', ')||d.lleno;
+    const hayLleno=estados.some(Boolean)||llenoAct;
+    if(hayLleno){a.style.display='block';a.textContent='Recipiente lleno ('+llenosTxt+'). Vacíalo para reanudar la operación.'}else a.style.display='none';
+    const bm=$('bm');bm.disabled=busy||hayLleno||!!d.bandaPendiente||!d.conectado;
     bm.textContent=d.bandaPendiente?'Orden enviada…':'Activar banda';
-    $('bd').textContent=d.bandaPendiente?'Esperando que el Arduino reciba la orden (hasta 3 s).':!d.conectado?'El Arduino debe estar conectado para recibir la orden.':llenoAct?'No disponible mientras haya un recipiente lleno.':'Mueve la banda un ciclo completo (unos 18 s) sin clasificar.';
+    $('bd').textContent=d.bandaPendiente?'Esperando que el Arduino reciba la orden (hasta 3 s).':!d.conectado?'El Arduino debe estar conectado para recibir la orden.':hayLleno?'No disponible mientras haya un recipiente lleno.':'Mueve la banda un ciclo completo (unos 18 s) sin clasificar.';
     const dp=$('dp');dp.className='pl'+(pausa?' w':'');dp.textContent=pausa?'Bloqueada':'Activa';
     $('bp').textContent=pausa?'Desbloquear detección':'Bloquear detección';
-    const cl=cerrada||llenoAct,gp=$('gp');gp.className='pl'+(cl?' e':'');gp.textContent=cl?'Cerrada':'Abierta';
-    $('gd').textContent=llenoAct?'Cierre automático: recipiente '+(llenosTxt||d.lleno)+' lleno.':cerrada?'Cerrada desde el panel. No entran residuos.':'Recibiendo residuos.';
-    const bg=$('bg');bg.disabled=busy||llenoAct;bg.textContent=cerrada?'Abrir compuerta':'Cerrar compuerta';bg.className=cerrada?'pri':'dg';
+    const cl=cerrada||hayLleno,gp=$('gp');gp.className='pl'+(cl?' e':'');gp.textContent=cl?'Cerrada':'Abierta';
+    $('gd').textContent=hayLleno?'Cierre automático: recipiente '+llenosTxt+' lleno.':cerrada?'Cerrada desde el panel. No entran residuos.':'Recibiendo residuos.';
+    const bg=$('bg');bg.disabled=busy||hayLleno;bg.textContent=cerrada?'Abrir compuerta':'Cerrar compuerta';bg.className=cerrada?'pri':'dg';
     if(d.eventos.length)$('ev').innerHTML=d.eventos.slice(0,12).map(e=>{
       const k=K(e.categoria),col=k>=0?D[k].c:e.evento==='lleno'?'var(--er)':'var(--mut)';
       return`<li><time>${hm(e.fecha,1)}</time><b>${esc(T[e.evento]||e.evento)}</b>${e.categoria?`<em><i style="background:${col}"></i>${esc(e.categoria)}</em>`:'<em></em>'}</li>`}).join('');
@@ -169,17 +175,36 @@ $('bp').onclick=async()=>{try{await post('/api/pausa',{pausa:!pausa});toast(!pau
 $('bg').onclick=async()=>{busy=true;$('bg').disabled=true;const n=!cerrada;
   try{await post('/api/compuerta',{cerrar:n});toast(n?'Orden enviada: cerrar compuerta':'Orden enviada: abrir compuerta')}catch(e){toast('No se pudo enviar la orden')}
   busy=false;act()};
+// Historial: un carril por recipiente, línea escalonada (arriba = LLENO, abajo = DISPONIBLE)
 function draw(){
   const r=rows,el=$('hist');
   if(!r)return;
   if(r.length<2){el.innerHTML='<div class="empty">Aún no hay suficientes lecturas. Aparecerán cuando el Arduino envíe datos.</div>';return}
-  const W=Math.max(280,Math.round(el.clientWidth||600)),H=W<500?190:230,L=30,B=22,x=i=>L+i*(W-L-6)/(r.length-1),y=v=>8+(H-B-8)*(1-v/100);
+  const W=Math.max(300,Math.round(el.clientWidth||600)),LH=48,TOP=6,B=22,H=TOP+3*LH+B,L=66,R=8;
   const ks=['nivel_metal','nivel_organico','nivel_variado'];
-  let g=[0,100].map(v=>`<line x1="${L}" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="var(--ln)"/><text x="0" y="${y(v)+4}">${v===100?'LLENO':'DISP.'}</text>`).join('');
-  
-  g+=ks.map((k,j)=>`<polyline fill="none" stroke="${D[j].c}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" points="${r.map((p,i)=>x(i).toFixed(1)+','+y(p[k]||0).toFixed(1)).join(' ')}"/>`).join('');
-  g+=`<text x="${L}" y="${H-5}">${hm(r[0].fecha)}</text><text x="${W}" y="${H-5}" text-anchor="end">${hm(r[r.length-1].fecha)}</text>`;
-  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="Historial de estados IoT por recipiente">${g}</svg><div class="lg">${D.map(x=>`<span style="--c:${x.c}">${x.n}</span>`).join('')}<span style="--c:var(--er)">LLENO detectado</span></div>`;
+  const ts=r.map(p=>new Date(p.fecha).getTime());
+  const t0=ts[0],span=Math.max(1,ts[ts.length-1]-t0);
+  const x=t=>L+(t-t0)*(W-L-R)/span;
+  let g='';
+  ks.forEach((k,j)=>{
+    const y0=TOP+j*LH,yH=y0+8,yL=y0+LH-12;
+    const f=r.map(p=>(Number(p[k])||0)>=100);
+    g+=`<line x1="${L}" x2="${W-R}" y1="${yL}" y2="${yL}" stroke="var(--ln)"/><text x="0" y="${(yH+yL)/2+4}">${D[j].n}</text>`;
+    // zonas llenas sombreadas en rojo
+    for(let i=0;i<f.length;i++){
+      if(!f[i])continue;
+      let e=i;while(e+1<f.length&&f[e+1])e++;
+      const xa=x(ts[i]),xb=x(ts[Math.min(e+1,f.length-1)]);
+      g+=`<rect x="${xa.toFixed(1)}" y="${yH}" width="${Math.max(2,xb-xa).toFixed(1)}" height="${yL-yH}" fill="var(--er)" opacity=".28"/>`;
+      i=e;
+    }
+    // línea escalonada
+    let d='';
+    f.forEach((v,i)=>{const yy=v?yH:yL,xx=x(ts[i]).toFixed(1);d+=i===0?`M${xx},${yy}`:`H${xx}V${yy}`});
+    g+=`<path d="${d}" fill="none" stroke="${D[j].c}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>`;
+  });
+  g+=`<text x="${L}" y="${H-5}">${hm(r[0].fecha)}</text><text x="${W-R}" y="${H-5}" text-anchor="end">${hm(r[r.length-1].fecha)}</text>`;
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="Historial de estados lleno o disponible por recipiente">${g}</svg><div class="lg"><span style="--c:var(--ok)">Línea alta = LLENO · línea baja = DISPONIBLE</span><span class="sh" style="--c:var(--er)">Tiempo en estado LLENO</span></div>`;
 }
 async function hist(){
   try{rows=(await (await fetch('/api/historial')).json()).reverse();draw()}
