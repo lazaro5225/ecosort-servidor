@@ -84,8 +84,6 @@ footer{grid-column:1/-1;text-align:center;font-size:12px;color:var(--mut);paddin
 <div class="ct"><div class="cr"><b>Compuerta de entrada</b><span class="pl" id="gp">Abierta</span></div><p id="gd">Recibiendo residuos.</p><button id="bg" class="dg">Cerrar compuerta</button></div>
 </section>
 
-
-
 <section class="pn cy"><div class="ph"><h2>Conectividad IoT</h2><span>Telemetría y supervisión remota</span></div><div class="pb">
   <div class="bins">
     <div class="bc"><div class="bi"><div class="bn">1. Dispositivo</div><div class="bs">Arduino UNO R4 WiFi consulta los tres HC-SR04 y confirma el estado con 4 lecturas consecutivas.</div></div></div>
@@ -149,14 +147,15 @@ async function act(){
       $('c'+i).innerHTML='<b>'+c+'</b> '+(c==1?'objeto':'objetos')+' · '+(lleno?'Umbral confirmado':('Lecturas: '+confirmacion+'/4'));
     });
     const a=$('alerta');
-    if(llenoAct){a.style.display='block';a.textContent='Recipiente lleno ('+d.lleno+'). Vacíalo para reanudar la operación.'}else a.style.display='none';
+    const llenosTxt=Array.isArray(d.llenos)?D.filter((_,i)=>d.llenos[i]).map(x=>x.n.toLowerCase()).join(', '):d.lleno;
+    if(llenoAct){a.style.display='block';a.textContent='Recipiente lleno ('+(llenosTxt||d.lleno)+'). Vacíalo para reanudar la operación.'}else a.style.display='none';
     const bm=$('bm');bm.disabled=busy||llenoAct||!!d.bandaPendiente||!d.conectado;
     bm.textContent=d.bandaPendiente?'Orden enviada…':'Activar banda';
     $('bd').textContent=d.bandaPendiente?'Esperando que el Arduino reciba la orden (hasta 3 s).':!d.conectado?'El Arduino debe estar conectado para recibir la orden.':llenoAct?'No disponible mientras haya un recipiente lleno.':'Mueve la banda un ciclo completo (unos 18 s) sin clasificar.';
     const dp=$('dp');dp.className='pl'+(pausa?' w':'');dp.textContent=pausa?'Bloqueada':'Activa';
     $('bp').textContent=pausa?'Desbloquear detección':'Bloquear detección';
     const cl=cerrada||llenoAct,gp=$('gp');gp.className='pl'+(cl?' e':'');gp.textContent=cl?'Cerrada':'Abierta';
-    $('gd').textContent=llenoAct?'Cierre automático: recipiente '+d.lleno+' lleno.':cerrada?'Cerrada desde el panel. No entran residuos.':'Recibiendo residuos.';
+    $('gd').textContent=llenoAct?'Cierre automático: recipiente '+(llenosTxt||d.lleno)+' lleno.':cerrada?'Cerrada desde el panel. No entran residuos.':'Recibiendo residuos.';
     const bg=$('bg');bg.disabled=busy||llenoAct;bg.textContent=cerrada?'Abrir compuerta':'Cerrar compuerta';bg.className=cerrada?'pri':'dg';
     if(d.eventos.length)$('ev').innerHTML=d.eventos.slice(0,12).map(e=>{
       const k=K(e.categoria),col=k>=0?D[k].c:e.evento==='lleno'?'var(--er)':'var(--mut)';
