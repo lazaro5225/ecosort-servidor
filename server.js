@@ -33,7 +33,17 @@ if (fs.existsSync(path.join(carpetaPublica, 'index.html'))) {
 }
 
 // ---------- Estado en memoria ----------
-let db = { pausa: false, cerrarCompuerta: false, ultimaConexion: 0, niveles: [0, 0, 0], contadores: [0, 0, 0], lleno: null, eventos: [] };
+let db = {
+  pausa: false,
+  cerrarCompuerta: false,
+  ultimaConexion: 0,
+  niveles: [0, 0, 0],
+  contadores: [0, 0, 0],
+  lleno: null,
+  llenos: [false, false, false],
+  confirmaciones: [0, 0, 0],
+  eventos: []
+};
 try { db = Object.assign(db, JSON.parse(fs.readFileSync(ARCHIVO, 'utf8'))); } catch (e) {}
 
 // Orden de "activar banda" pendiente de entregar al Arduino (solo en memoria, no se repite al reiniciar)
@@ -163,6 +173,8 @@ function registrarEvento(evento, categoria, inductivo, capacitivo) {
 const auth = (req, res, next) =>
   req.get('x-clave') === CLAVE ? next() : res.status(401).json({ error: 'clave incorrecta' });
 const num3 = a => Array.isArray(a) && a.length === 3 && a.every(Number.isFinite);
+const bool3 = a => Array.isArray(a) && a.length === 3 && a.every(x => typeof x === 'boolean');
+const int3 = a => Array.isArray(a) && a.length === 3 && a.every(Number.isInteger);
 
 // Respuesta de comandos para el Arduino. La orden de banda se entrega una sola vez.
 function comandos() {
@@ -175,6 +187,8 @@ app.post('/api/datos', auth, (req, res) => {
   const b = req.body || {};
   if (num3(b.niveles)) db.niveles = b.niveles;
   if (num3(b.contadores)) db.contadores = b.contadores;
+  if (bool3(b.llenos)) db.llenos = b.llenos;
+  if (int3(b.confirmaciones)) db.confirmaciones = b.confirmaciones;
   if (b.lleno !== undefined) db.lleno = b.lleno || null;
   db.ultimaConexion = Date.now();
 
