@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -16,23 +15,23 @@ header{background:#050505;color:#fff;padding:calc(14px + env(safe-area-inset-top
 header::after{content:"";position:absolute;left:0;right:0;bottom:-8px;height:8px;background:repeating-linear-gradient(-55deg,#E0A800 0 14px,#050505 14px 28px)}
 .in{max-width:1240px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:14px}
 
-/* LOGO ECO-SORT ULS */
+/* LOGO ECO-SORT ULS - ARREGLADO */
 .br{
   display:flex;
   align-items:center;
-  gap:13px;
+  gap:14px;
   min-width:0;
 }
 .br img{
   display:block;
   flex:none;
-  width:66px;
-  height:66px;
+  width:80px;
+  height:80px;
   object-fit:contain;
   object-position:center;
-  border:0;
-  border-radius:0;
-  background:transparent;
+  border-radius:14px;
+  background:#111;
+  box-shadow:0 0 0 1px rgba(255,255,255,.08);
 }
 .br div{display:flex;flex-direction:column;justify-content:center}
 .br b{display:block;font-size:19px;font-weight:800;letter-spacing:.04em;line-height:1.1;color:var(--ac)}
@@ -86,7 +85,7 @@ svg text{fill:var(--mut);font:11px Manrope,sans-serif}
  .cyn{font-size:36px;min-width:70px}.cyb{padding:14px 16px}.cyb b{font-size:16px}
  .bins{grid-template-columns:1fr}.bc{padding:12px}.bin{height:96px}.bp{font-size:26px}
  main{gap:14px;padding-top:16px}.pb{padding:14px}.ct{padding:14px 16px}.ph{padding:12px 16px}.ev{padding:4px 16px 8px}
- .br img{width:50px;height:50px}
+ .br img{width:64px;height:64px}
  .br b{font-size:16px}
  .br span{display:none}
  .cn small{display:none}
@@ -100,8 +99,8 @@ svg text{fill:var(--mut);font:11px Manrope,sans-serif}
   <img
     src="https://raw.githubusercontent.com/lazaro5225/ecosort-servidor/main/logo%20eco-sort%20uls.png"
     alt="Logotipo ECO-SORT ULS"
-    width="66"
-    height="66"
+    width="80"
+    height="80"
   >
   <div><b>ECO-SORT <em>ULS</em></b><span>Clasificador inteligente de residuos</span></div>
 </div>
@@ -185,7 +184,8 @@ async function act(){
     const bg=$('bg');bg.disabled=busy||hayLleno;bg.textContent=cerrada?'Abrir compuerta':'Cerrar compuerta';bg.className=cerrada?'pri':'dg';
     if(d.eventos.length)$('ev').innerHTML=d.eventos.slice(0,12).map(e=>{
       const k=K(e.categoria),col=k>=0?D[k].c:e.evento==='lleno'?'var(--er)':'var(--mut)';
-      return`<li><time>${hm(e.fecha,1)}</time><b>${esc(T[e.evento]||e.evento)}</b>${e.categoria?`<em><i style="background:${col}"></i>${esc(e.categoria)}</em>`:'<em></em>'}</li>`}).join('');
+      return `<li><time>${hm(e.fecha,1)}</time><b>${esc(T[e.evento]||e.evento)}</b>${e.categoria?`<em><i style="background:${col}"></i>${esc(e.categoria)}</em>`:'<em></em>'}</li>`;
+    }).join('');
   }catch(e){$('cn').className='cn';$('cs').textContent='Sin respuesta del servidor';$('cu').textContent=''}
 }
 async function post(u,b){return fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)})}
@@ -218,7 +218,7 @@ function draw(){
       i=e;
     }
     let d='';
-    f.forEach((v,i)=>{const yy=v?yH:yL,xx=x(ts[i]).toFixed(1);d+=i===0?`M${xx},${yy}`:`H${xx}V${yy}`});
+    f.forEach((v,i)=>{const yy=v?yH:yL,xx=x(ts[i]).toFixed(1);d+=i===0?`M${xx},${yy}`:`H${xx}V${yy}`;});
     g+=`<path d="${d}" fill="none" stroke="${D[j].c}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>`;
   });
   g+=`<text x="${L}" y="${H-5}">${hm(r[0].fecha)}</text><text x="${W-R}" y="${H-5}" text-anchor="end">${hm(r[r.length-1].fecha)}</text>`;
