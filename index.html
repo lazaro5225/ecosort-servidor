@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -14,12 +15,30 @@ body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 Manrope,system
 header{background:#050505;color:#fff;padding:calc(14px + env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) 14px max(20px,env(safe-area-inset-left));position:sticky;top:0;z-index:5;box-shadow:0 2px 10px rgba(0,0,0,.18)}
 header::after{content:"";position:absolute;left:0;right:0;bottom:-8px;height:8px;background:repeating-linear-gradient(-55deg,#E0A800 0 14px,#050505 14px 28px)}
 .in{max-width:1240px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:14px}
-.br{display:flex;align-items:center;gap:12px}
-.br img{flex:none;width:44px;height:44px;object-fit:cover;border-radius:50%;border:1.5px solid var(--ac)}
-.br div{display:flex;flex-direction:column}
+
+/* LOGO ECO-SORT ULS */
+.br{
+  display:flex;
+  align-items:center;
+  gap:13px;
+  min-width:0;
+}
+.br img{
+  display:block;
+  flex:none;
+  width:66px;
+  height:66px;
+  object-fit:contain;
+  object-position:center;
+  border:0;
+  border-radius:0;
+  background:transparent;
+}
+.br div{display:flex;flex-direction:column;justify-content:center}
 .br b{display:block;font-size:19px;font-weight:800;letter-spacing:.04em;line-height:1.1;color:var(--ac)}
 .br b em{font-style:normal;color:#fff}
 .br span{font-size:12px;opacity:.75}
+
 .cn{display:flex;align-items:center;gap:8px;padding:6px 14px;border-radius:99px;background:rgba(255,255,255,.12);font-size:13px;font-weight:600;white-space:nowrap}
 .cn i{width:9px;height:9px;border-radius:50%;background:#F08B85}.cn.on i{background:#6FE3A1;box-shadow:0 0 0 3px rgba(111,227,161,.25)}.cn small{opacity:.7;font-weight:500}
 main{max-width:1240px;margin:0 auto;padding:22px max(20px,env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;align-content:start}
@@ -67,7 +86,10 @@ svg text{fill:var(--mut);font:11px Manrope,sans-serif}
  .cyn{font-size:36px;min-width:70px}.cyb{padding:14px 16px}.cyb b{font-size:16px}
  .bins{grid-template-columns:1fr}.bc{padding:12px}.bin{height:96px}.bp{font-size:26px}
  main{gap:14px;padding-top:16px}.pb{padding:14px}.ct{padding:14px 16px}.ph{padding:12px 16px}.ev{padding:4px 16px 8px}
- .br b{font-size:16px}.br span{display:none}.cn small{display:none}
+ .br img{width:50px;height:50px}
+ .br b{font-size:16px}
+ .br span{display:none}
+ .cn small{display:none}
  button{min-height:50px;font-size:15px}
  #toast{left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));text-align:center}
 }
@@ -75,7 +97,12 @@ svg text{fill:var(--mut);font:11px Manrope,sans-serif}
 </style></head><body>
 <header><div class="in">
 <div class="br">
-  <img src="logo eco-sort uls.png" alt="ECO-SORT ULS Logo">
+  <img
+    src="https://raw.githubusercontent.com/lazaro5225/ecosort-servidor/main/logo%20eco-sort%20uls.png"
+    alt="Logotipo ECO-SORT ULS"
+    width="66"
+    height="66"
+  >
   <div><b>ECO-SORT <em>ULS</em></b><span>Clasificador inteligente de residuos</span></div>
 </div>
 <div class="cn" id="cn"><i></i><span id="cs">Sin conexión</span><small id="cu"></small></div>
