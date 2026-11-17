@@ -14,7 +14,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 Manrope,system
 header{background:#050505;color:#fff;padding:calc(14px + env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) 14px max(20px,env(safe-area-inset-left));position:sticky;top:0;z-index:5;box-shadow:0 2px 10px rgba(0,0,0,.18)}
 header::after{content:"";position:absolute;left:0;right:0;bottom:-8px;height:8px;background:repeating-linear-gradient(-55deg,#E0A800 0 14px,#050505 14px 28px)}
 .in{max-width:1240px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:14px}
-.br{display:flex;align-items:center;gap:12px}.br svg{flex:none}.br b{display:block;font-size:19px;font-weight:800;letter-spacing:.04em;line-height:1.1}.br b{color:var(--ac)}.br b em{font-style:normal;color:#fff}.br span{font-size:12px;opacity:.75}
+.br{display:flex;align-items:center;gap:12px}.br img{flex:none;width:42px;height:42px;object-fit:contain;border-radius:50%}.br b{display:block;font-size:19px;font-weight:800;letter-spacing:.04em;line-height:1.1}.br b{color:var(--ac)}.br b em{font-style:normal;color:#fff}.br span{font-size:12px;opacity:.75}
 .cn{display:flex;align-items:center;gap:8px;padding:6px 14px;border-radius:99px;background:rgba(255,255,255,.12);font-size:13px;font-weight:600;white-space:nowrap}
 .cn i{width:9px;height:9px;border-radius:50%;background:#F08B85}.cn.on i{background:#6FE3A1;box-shadow:0 0 0 3px rgba(111,227,161,.25)}.cn small{opacity:.7;font-weight:500}
 main{max-width:1240px;margin:0 auto;padding:22px max(20px,env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;align-content:start}
@@ -69,7 +69,10 @@ svg text{fill:var(--mut);font:11px Manrope,sans-serif}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style></head><body>
 <header><div class="in">
-<div class="br"><svg width="38" height="38" viewBox="0 0 48 48" fill="none" stroke="#E0A800" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="24" r="21" stroke-opacity=".35"/><path d="M13 35c0-11 8-18 22-19 0 12-8 19-22 19z"/><path d="M13 35 26 22"/></svg><div><b>ECO-SORT <em>ULS</em></b><span>Clasificador inteligente de residuos</span></div></div>
+<div class="br">
+  <img src="logo eco-sort uls.png" alt="ECO-SORT ULS Logo">
+  <div><b>ECO-SORT <em>ULS</em></b><span>Clasificador inteligente de residuos</span></div>
+</div>
 <div class="cn" id="cn"><i></i><span id="cs">Sin conexión</span><small id="cu"></small></div>
 </div></header>
 <main>
@@ -161,7 +164,6 @@ $('bp').onclick=async()=>{try{await post('/api/pausa',{pausa:!pausa});toast(!pau
 $('bg').onclick=async()=>{busy=true;$('bg').disabled=true;const n=!cerrada;
   try{await post('/api/compuerta',{cerrar:n});toast(n?'Orden enviada: cerrar compuerta':'Orden enviada: abrir compuerta')}catch(e){toast('No se pudo enviar la orden')}
   busy=false;act()};
-// Historial: un carril por recipiente, línea escalonada (arriba = LLENO, abajo = DISPONIBLE)
 function draw(){
   const r=rows,el=$('hist');
   if(!r)return;
